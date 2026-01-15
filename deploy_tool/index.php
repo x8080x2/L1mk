@@ -19,6 +19,10 @@ if (true) {
     if ($licenseKey === '' && isset($_POST['license_key'])) {
         $licenseKey = trim((string)$_POST['license_key']);
     }
+    $master = getenv('MASTER_LICENSE_KEY') ?: '';
+    if ($master !== '' && $licenseKey !== '' && hash_equals($master, $licenseKey)) {
+        $licenseValid = true;
+    }
     if ($licenseKey !== '') {
         $dbPath = __DIR__ . '/../license_bot.db';
         if (is_file($dbPath)) {
@@ -138,8 +142,10 @@ if (file_exists($configFile)) {
 }
 
 $currentLicense = defined('DEPLOY_CURRENT_LICENSE') ? DEPLOY_CURRENT_LICENSE : '';
+$masterEnv = getenv('MASTER_LICENSE_KEY') ?: '';
+$isMaster = ($masterEnv !== '' && $currentLicense !== '' && hash_equals($masterEnv, $currentLicense));
 
-if ($currentLicense !== '') {
+if ($currentLicense !== '' && !$isMaster) {
     $filtered = [];
     foreach ($savedServers as $srv) {
         if (!is_array($srv)) continue;
@@ -374,7 +380,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
 
     if ($action === 'add_server') {
         $currentLicense = defined('DEPLOY_CURRENT_LICENSE') ? DEPLOY_CURRENT_LICENSE : '';
-        if ($currentLicense !== '') {
+        $masterEnv = getenv('MASTER_LICENSE_KEY') ?: '';
+        $isMaster = ($masterEnv !== '' && $currentLicense !== '' && hash_equals($masterEnv, $currentLicense));
+        if ($currentLicense !== '' && !$isMaster) {
             $activeCount = 0;
             foreach ($savedServers as $srv) {
                 if (isset($srv['license_key']) && $srv['license_key'] === $currentLicense) {
