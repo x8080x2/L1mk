@@ -6,7 +6,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
-    && docker-php-ext-install bcmath
+    libzip-dev \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install bcmath zip
 
 COPY composer.json composer.lock ./
 COPY src/App.php ./src/
