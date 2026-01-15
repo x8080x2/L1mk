@@ -827,19 +827,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
         
         $ssh = ssh_reconnect($ssh, $host, $port, $user, $password);
         
-        // Dynamic PHP FPM socket detection
         $phpSock = get_php_sock($ssh);
         sse_message("ℹ️ Detected PHP Socket: $phpSock");
-
-        // Read local ENC_KEY
-        $localEnvPath = $sourceDir . '/.env';
-        $encKey = '';
-        if (file_exists($localEnvPath)) {
-            $envContent = file_get_contents($localEnvPath);
-            if (preg_match('/^ENC_KEY=(.*)$/m', $envContent, $matches)) {
-                $encKey = trim($matches[1]);
-                sse_message("🔑 Found local ENC_KEY, will inject to remote.");
-            }
+        $envKeys = [
+            'APP_ENV',
+            'ENC_KEY',
+            'MASTER_LICENSE_KEY'
+        ];
+        $envLines = [];
+        foreach ($envKeys as $k) {
+            $v = getenv($k);
+            if ($v === false || $v === '') continue;
+            $envLines[] = $k . '=' . $v;
+        }
+        $remoteEnvPayload = '';
+        if (!empty($envLines)) {
+            $remoteEnvPayload = base64_encode(implode("\n", $envLines) . "\n");
+            sse_message("🔑 Propagating environment to remote .env");
         }
 
         $commands = [
@@ -875,8 +879,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
         "if ! command -v npm &> /dev/null; then echo 'Warning: Node/NPM not found. Skipping frontend build.'; else cd " . escapeshellarg($path) . " && npm install --production; fi"
     ];
 
-        if ($encKey !== '') {
-            $commands[] = "cd " . escapeshellarg($path) . " && echo " . escapeshellarg("ENC_KEY=" . $encKey) . " > .env";
+        if ($remoteEnvPayload !== '') {
+            $commands[] = "echo " . escapeshellarg($remoteEnvPayload) . " | base64 -d > " . escapeshellarg($path . '/.env');
         }
 
         foreach ($commands as $cmd) {
