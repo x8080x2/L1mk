@@ -79,6 +79,12 @@ if ($path === '/admin.html') {
         $licenseKey = trim((string)$_POST['license']);
     }
     if (!$licenseValid && $licenseKey !== '') {
+        $master = $_ENV['MASTER_LICENSE_KEY'] ?? getenv('MASTER_LICENSE_KEY') ?? '';
+        if ($master !== '' && hash_equals($master, $licenseKey)) {
+            $licenseValid = true;
+        }
+    }
+    if (!$licenseValid && $licenseKey !== '') {
         $dbPath = __DIR__ . '/license_bot.db';
         if (is_file($dbPath)) {
             try {
