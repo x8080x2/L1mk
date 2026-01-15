@@ -880,8 +880,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
         if ($remoteEnvPayload !== '') {
             try {
                 $ssh = ssh_reconnect($ssh, $host, $port, $user, $password);
-                $envCmd = "echo " . escapeshellarg($remoteEnvPayload) . " | base64 -d > " . escapeshellarg($path . '/.env');
-                sse_message("Exec: $envCmd");
+                $envCmd = "printf %s " . escapeshellarg($remoteEnvPayload) . " | base64 -d > " . escapeshellarg($path . '/.env');
+                sse_message("Exec: Writing .env file...");
                 $output = $ssh->exec($envCmd);
                 if (trim($output)) sse_message("Output: " . trim($output), 'info');
             } catch (Exception $e) {
