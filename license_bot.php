@@ -137,6 +137,7 @@ function handle_plan_selection($chatId, $days)
             [
                 ['text' => 'BTC', 'callback_data' => 'pay:' . $days . ':BTC'],
                 ['text' => 'USDT', 'callback_data' => 'pay:' . $days . ':USDT'],
+                ['text' => 'Admin approval', 'callback_data' => 'pay:' . $days . ':ADMIN'],
             ],
         ],
     ];
@@ -170,10 +171,14 @@ function create_invoice($chatId, $username, $days, $method)
     $invoiceId = (int)$pdo->lastInsertId();
     if ($method === 'BTC') {
         $payTo = $btcAddress;
-    } else {
+        $paymentText = "Pay to this address:\n{$payTo}\n\nAfter payment, send the transaction hash or a screenshot here.";
+    } elseif ($method === 'USDT') {
         $payTo = $usdtAddress;
+        $paymentText = "Pay to this address:\n{$payTo}\n\nAfter payment, send the transaction hash or a screenshot here.";
+    } else {
+        $paymentText = "An admin will provide payment details and approve your license after payment. Send any payment proof or message here when done.";
     }
-    $text = "Invoice #{$invoiceId}\n\nPlan: {$days} days\nPrice: \${$price}\nPayment Method: {$method}\n\nPay to this address:\n{$payTo}\n\nAfter payment, send the transaction hash or a screenshot here.";
+    $text = "Invoice #{$invoiceId}\n\nPlan: {$days} days\nPrice: \${$price}\nPayment Method: {$method}\n\n{$paymentText}";
     tg_request('sendMessage', [
         'chat_id' => $chatId,
         'text' => $text,
@@ -190,7 +195,7 @@ function handle_payment_method($chatId, $from, $days, $method)
         $username = trim(($from['first_name'] ?? '') . ' ' . ($from['last_name'] ?? ''));
     }
     $method = strtoupper($method);
-    if (!in_array($method, ['BTC', 'USDT'], true)) {
+    if (!in_array($method, ['BTC', 'USDT', 'ADMIN'], true)) {
         tg_request('sendMessage', [
             'chat_id' => $chatId,
             'text' => 'Invalid payment method.',
@@ -327,7 +332,7 @@ function handle_user_payment_proof($message)
     if ($proof === '') {
         tg_request('sendMessage', [
             'chat_id' => $chatId,
-            'text' => 'Send the transaction hash or a screenshot as proof of payment.',
+            'text' => 'Send proof of payment (text or screenshot).',
         ]);
         return;
     }
