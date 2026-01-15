@@ -7,6 +7,13 @@ function parse_deploy_request($post) {
     $domains = normalize_domains_list($post['domains'] ?? []);
     $domains = array_values(array_filter($domains, fn($d) => $d !== '' && $d !== $main_domain));
 
+    $licenseKey = '';
+    if (isset($post['license'])) {
+        $licenseKey = trim((string)$post['license']);
+    } elseif (isset($post['license_key'])) {
+        $licenseKey = trim((string)$post['license_key']);
+    }
+
     return [
         'action' => $_GET['action'] ?? '',
         'host' => $post['host'] ?? '',
@@ -18,9 +25,9 @@ function parse_deploy_request($post) {
         'domains' => $domains,
         'rotation_enabled' => isset($post['rotation_enabled']) && (string)$post['rotation_enabled'] === '1',
         'wildcard_enabled' => isset($post['wildcard_enabled']) && (string)$post['wildcard_enabled'] === '1',
-        // Default to current directory's parent if not specified, but this should be provided by input
         'local_path' => $post['local_path'] ?? '',
-        'server_id' => $post['server_id'] ?? null
+        'server_id' => $post['server_id'] ?? null,
+        'license_key' => $licenseKey
     ];
 }
 

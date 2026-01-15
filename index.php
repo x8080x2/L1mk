@@ -75,15 +75,8 @@ if ($path === '/api.php' || $path === '/api') {
 if ($path === '/admin.html') {
     $licenseValid = false;
     $licenseKey = '';
-    if (!empty($_COOKIE['deploy_license'])) {
-        $licenseKey = trim((string)$_COOKIE['deploy_license']);
-    }
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['license'])) {
         $licenseKey = trim((string)$_POST['license']);
-    }
-    if ($licenseKey === '8080') {
-        $licenseValid = true;
-        setcookie('deploy_license', $licenseKey, time() + 180, '/', '', false, true);
     }
     if (!$licenseValid && $licenseKey !== '') {
         $dbPath = __DIR__ . '/license_bot.db';
@@ -96,12 +89,6 @@ if ($path === '/admin.html') {
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($row && $row['status'] === 'active' && isset($row['expires_at']) && $row['expires_at'] > gmdate('c')) {
                     $licenseValid = true;
-                    $cookieTtl = ($licenseKey === '8080') ? 180 : 86400;
-                    if (!isset($_COOKIE['deploy_license']) || $_COOKIE['deploy_license'] !== $licenseKey) {
-                        setcookie('deploy_license', $licenseKey, time() + $cookieTtl, '/', '', false, true);
-                    } else {
-                        setcookie('deploy_license', $licenseKey, time() + $cookieTtl, '/', '', false, true);
-                    }
                 }
             } catch (Throwable $e) {
             }

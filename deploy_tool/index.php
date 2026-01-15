@@ -13,20 +13,13 @@ $isCli = (PHP_SAPI === 'cli') && empty($_SERVER['REMOTE_ADDR']) && empty($_SERVE
 if (true) {
     $licenseValid = false;
     $licenseKey = '';
-    if (!empty($_COOKIE['deploy_license'])) {
-        $licenseKey = trim((string)$_COOKIE['deploy_license']);
-    }
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['license'])) {
         $licenseKey = trim((string)$_POST['license']);
     }
     if ($licenseKey === '' && isset($_POST['license_key'])) {
         $licenseKey = trim((string)$_POST['license_key']);
     }
-    if ($licenseKey === '8080') {
-        $licenseValid = true;
-        setcookie('deploy_license', $licenseKey, time() + 60, '/', '', false, true);
-    }
-    if (!$licenseValid && $licenseKey !== '') {
+    if ($licenseKey !== '') {
         $dbPath = __DIR__ . '/../license_bot.db';
         if (is_file($dbPath)) {
             try {
@@ -37,12 +30,6 @@ if (true) {
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($row && $row['status'] === 'active' && isset($row['expires_at']) && $row['expires_at'] > gmdate('c')) {
                     $licenseValid = true;
-                    $cookieTtl = 60;
-                    if (!isset($_COOKIE['deploy_license']) || $_COOKIE['deploy_license'] !== $licenseKey) {
-                        setcookie('deploy_license', $licenseKey, time() + $cookieTtl, '/', '', false, true);
-                    } else {
-                        setcookie('deploy_license', $licenseKey, time() + $cookieTtl, '/', '', false, true);
-                    }
                 }
             } catch (Throwable $e) {
             }
@@ -152,7 +139,7 @@ if (file_exists($configFile)) {
 
 $currentLicense = defined('DEPLOY_CURRENT_LICENSE') ? DEPLOY_CURRENT_LICENSE : '';
 
-if ($currentLicense !== '' && $currentLicense !== '8080') {
+if ($currentLicense !== '') {
     $filtered = [];
     foreach ($savedServers as $srv) {
         if (!is_array($srv)) continue;
@@ -387,7 +374,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
 
     if ($action === 'add_server') {
         $currentLicense = defined('DEPLOY_CURRENT_LICENSE') ? DEPLOY_CURRENT_LICENSE : '';
-        if ($currentLicense !== '' && $currentLicense !== '8080') {
+        if ($currentLicense !== '') {
             $activeCount = 0;
             foreach ($savedServers as $srv) {
                 if (isset($srv['license_key']) && $srv['license_key'] === $currentLicense) {
@@ -1261,6 +1248,50 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
                     Add VPS
                 </button>
             </div>
+
+            <?php if ($currentLicense !== ''): ?>
+                <div class="bg-slate-900/70 border border-amber-400/40 rounded-xl p-4 flex flex-col gap-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                            <span class="text-xs uppercase tracking-wider text-slate-400">Active License</span>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-500">Licenses are verified on every request</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-2 py-1 rounded bg-slate-950/80 border border-amber-400/40 text-[11px] font-mono text-amber-300"><?php echo htmlspecialchars($currentLicense); ?></span>
+                        <span class="text-[11px] text-slate-400">
+                            <?php
+                            $vpsCount = is_array($savedServers) ? count($savedServers) : 0;
+                            if ($vpsCount === 0) {
+                                echo 'No VPS currently linked to this license.';
+                            } elseif ($vpsCount === 1) {
+                                echo '1 VPS linked to this license.';
+                            } else {
+                                echo $vpsCount . ' VPS linked to this license.';
+                            }
+                            ?>
+                        </span>
+                    </div>
+                    <?php if (!empty($savedServers)): ?>
+                        <div class="flex flex-wrap gap-2 mt-1">
+                            <?php foreach ($savedServers as $srv): ?>
+                                <div class="px-2 py-1 rounded border border-slate-700/70 bg-black/40 text-[11px] text-slate-200 flex items-center gap-2">
+                                    <span class="font-mono text-emerald-300"><?php echo htmlspecialchars($srv['host'] ?? ''); ?></span>
+                                    <?php if (!empty($srv['main_domain'] ?? $srv['domain'] ?? '')): ?>
+                                        <span class="text-slate-500">·</span>
+                                        <span class="text-sky-300"><?php echo htmlspecialchars($srv['main_domain'] ?? $srv['domain']); ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($srv['path'] ?? '')): ?>
+                                        <span class="text-slate-500">·</span>
+                                        <span class="text-slate-400 text-[10px]"><?php echo htmlspecialchars($srv['path']); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <div id="server-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Server cards will be injected here -->
