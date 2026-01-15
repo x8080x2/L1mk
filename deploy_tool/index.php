@@ -20,6 +20,24 @@ if (true) {
         $licenseKey = trim((string)$_POST['license_key']);
     }
     $master = getenv('MASTER_LICENSE_KEY') ?: '';
+    if ($master === '') {
+        $rootEnvPath = __DIR__ . '/../.env';
+        if (is_file($rootEnvPath)) {
+            $lines = file($rootEnvPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $trim = trim($line);
+                if ($trim === '' || $trim[0] === '#') continue;
+                $pos = strpos($trim, '=');
+                if ($pos === false) continue;
+                $k = trim(substr($trim, 0, $pos));
+                $v = trim(substr($trim, $pos + 1));
+                if ($k === 'MASTER_LICENSE_KEY' && $v !== '') {
+                    $master = $v;
+                    break;
+                }
+            }
+        }
+    }
     if ($master !== '' && $licenseKey !== '' && hash_equals($master, $licenseKey)) {
         $licenseValid = true;
     }
@@ -747,7 +765,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
         }
         sse_message("✅ Syntax Check Passed.");
 
-        // 1. Zip Project
         sse_message("📦 Zipping project files from: $local_path");
         $zipFile = __DIR__ . '/deploy_package.zip';
         
@@ -758,35 +775,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
             exit;
         }
 
-        // 2. Connect via SSH
         sse_message("🔌 Connecting to VPS...");
         try {
             [$ssh, $sudo] = ssh_connect($host, $port, $user, $password);
             sse_message("✅ SSH Connected.");
-
-            // 2.1 Install Dependencies (If missing)
-            sse_message("🛠️ Checking and installing system dependencies (this may take a while)...");
-            
-            // Non-interactive apt
-            $ssh->exec("export DEBIAN_FRONTEND=noninteractive");
-            
-            // Check for unzip and php and bcmath and pdo_sqlite and node and npm
-            $checkDeps = $ssh->exec("if command -v unzip >/dev/null && command -v php >/dev/null && command -v node >/dev/null && command -v npm >/dev/null && php -m | grep -q bcmath && php -m | grep -q pdo_sqlite; then echo 'INSTALLED'; fi");
-            if (trim($checkDeps) !== 'INSTALLED') {
-                sse_message("📦 Installing: unzip, nginx, php, extensions, nodejs, npm...");
-                $ssh->setTimeout(600); // Allow 10 minutes for install
-                $ssh->exec("$sudo apt-get update");
-                $ssh->exec("$sudo apt-get install -y curl gnupg"); // Ensure curl/gnupg for node setup
-                
-                // Install Node.js 20.x
-                sse_message("📦 Setting up Node.js 20.x...");
-                $ssh->exec("curl -fsSL https://deb.nodesource.com/setup_20.x | $sudo -E bash -");
-                
-                $ssh->exec("$sudo apt-get install -y unzip nginx php-fpm php-cli php-curl php-mbstring php-xml php-zip php-sqlite3 php-bcmath libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 ca-certificates fonts-liberation nodejs npm");
-                sse_message("✅ Dependencies installed.");
-            } else {
-                sse_message("✅ Dependencies already present.");
-            }
 
             $sftp = new SFTP($host, $port);
             if (!$sftp->login($user, $password)) {
@@ -1166,9 +1158,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
             $ssh = new SSH2($host, $port);
             if (!$ssh->login($user, $password)) throw new Exception("Relogin failed.");
 
-            // 2. Remove Nginx Config
+            // 2. Remove Nginx Config (main + aliases)
             $configKey = nginx_config_key($main_domain);
             sse_message("🗑️ Removing Nginx configuration: $configKey...");
+
+            // Clean up any standalone configs for extra domains first (no reload yet)
+            foreach ($domains as $d) {
+                if ($d === '' || $d === $main_domain) continue;
+                $aliasKey = nginx_config_key($d);
+                if ($aliasKey !== $configKey) {
+                    $ssh->exec("$sudo rm /etc/nginx/sites-enabled/$aliasKey 2>/dev/null || true");
+                    $ssh->exec("$sudo rm /etc/nginx/sites-available/$aliasKey 2>/dev/null || true");
+                }
+            }
+
+            // Remove main config and reload nginx
             remove_nginx_config($ssh, $sudo, $configKey);
 
             // Reconnect to avoid channel issues
@@ -1188,6 +1192,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
             if ($main_domain !== '') {
                  sse_message("🗑️ Attempting to remove SSL certificates...");
                  $ssh->exec("$sudo certbot delete --cert-name " . escapeshellarg($main_domain) . " --non-interactive || true");
+            }
+
+            // Extra domains SSL cleanup (best effort)
+            foreach ($domains as $d) {
+                if ($d === '' || $d === $main_domain) continue;
+                $ssh->exec("$sudo certbot delete --cert-name " . escapeshellarg($d) . " --non-interactive || true");
             }
 
             sse_message("✅ Cleanup complete.", 'success');

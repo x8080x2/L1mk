@@ -23,7 +23,28 @@ if (array_key_exists(0, $config)) {
     $_POST = $config;
 }
 
-$_POST['save_config'] = 'true'; // Just in case
+$_POST['save_config'] = 'true';
+
+$rootEnvPath = dirname(__DIR__) . '/.env';
+$master = '';
+if (is_file($rootEnvPath)) {
+    $lines = file($rootEnvPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $trim = trim($line);
+        if ($trim === '' || $trim[0] === '#') continue;
+        $pos = strpos($trim, '=');
+        if ($pos === false) continue;
+        $k = trim(substr($trim, 0, $pos));
+        $v = trim(substr($trim, $pos + 1));
+        if ($k === 'MASTER_LICENSE_KEY' && $v !== '') {
+            $master = $v;
+            break;
+        }
+    }
+}
+if ($master !== '' && !isset($_POST['license']) && !isset($_POST['license_key'])) {
+    $_POST['license_key'] = $master;
+}
 
 // Auto-encrypt admin.html if it exists
 if (file_exists('admin.html')) {
