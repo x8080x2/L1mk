@@ -1393,6 +1393,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
                     </div>
                     <input type="hidden" name="local_path" value="<?php echo htmlspecialchars(dirname(__DIR__)); ?>">
                     <input type="hidden" name="path" value="/var/www/html">
+                    <?php if ($currentLicense !== ''): ?>
+                        <input type="hidden" name="license_key" value="<?php echo htmlspecialchars($currentLicense); ?>">
+                    <?php endif; ?>
                 </div>
 
                 <div id="add-error" class="hidden p-4 bg-red-900/20 border border-red-900/50 text-red-200 rounded-lg text-sm"></div>
@@ -1416,6 +1419,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
             <section class="lg:col-span-4 flex flex-col h-full overflow-hidden">
                 <form id="deployForm" class="flex-1 flex flex-col bg-slate-900/50 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
                     <input type="hidden" name="server_id" id="deploy_server_id">
+                    <?php if ($currentLicense !== ''): ?>
+                        <input type="hidden" name="license_key" value="<?php echo htmlspecialchars($currentLicense); ?>">
+                    <?php endif; ?>
                     
                     <div class="p-3 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0">
                         <h2 class="text-sm font-semibold text-white flex items-center gap-2">
