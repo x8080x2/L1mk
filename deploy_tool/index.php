@@ -835,8 +835,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
             'MASTER_LICENSE_KEY'
         ];
         $envLines = [];
+        $rootEnvPath = realpath(__DIR__ . '/..') . '/.env';
+        $envFromFile = [];
+        if ($rootEnvPath && is_file($rootEnvPath)) {
+            $lines = file($rootEnvPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $trim = trim($line);
+                if ($trim === '' || $trim[0] === '#') continue;
+                $pos = strpos($trim, '=');
+                if ($pos === false) continue;
+                $k = trim(substr($trim, 0, $pos));
+                $v = trim(substr($trim, $pos + 1));
+                if ($k !== '') $envFromFile[$k] = $v;
+            }
+        }
         foreach ($envKeys as $k) {
             $v = getenv($k);
+            if (($v === false || $v === '') && isset($envFromFile[$k])) {
+                $v = $envFromFile[$k];
+            }
             if ($v === false || $v === '') continue;
             $envLines[] = $k . '=' . $v;
         }
