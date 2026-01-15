@@ -125,7 +125,12 @@ function get_used_identifiers($servers) {
 
 // --- Config Handling ---
 
-$configFile = __DIR__ . '/deploy_config.json';
+$diskDir = '/data/deploy_config.json';
+if (is_dir($diskDir) && is_writable($diskDir)) {
+    $configFile = $diskDir . '/deploy_config.json';
+} else {
+    $configFile = __DIR__ . '/deploy_config.json';
+}
 $savedServers = [];
 if (file_exists($configFile)) {
     $content = file_get_contents($configFile);

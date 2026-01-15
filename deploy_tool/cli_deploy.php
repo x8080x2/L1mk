@@ -2,7 +2,12 @@
 // Wrapper to run deployment from CLI
 
 // Load config
-$configFile = __DIR__ . '/deploy_config.json';
+$diskDir = '/data/deploy_config.json';
+if (is_dir($diskDir) && is_writable($diskDir)) {
+    $configFile = $diskDir . '/deploy_config.json';
+} else {
+    $configFile = __DIR__ . '/deploy_config.json';
+}
 if (!file_exists($configFile)) {
     die("Config file not found.\n");
 }
