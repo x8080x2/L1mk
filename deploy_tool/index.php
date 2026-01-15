@@ -847,46 +847,46 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
         }
 
         $commands = [
-            // Create backup
             "mkdir -p " . escapeshellarg($path) . "/backups",
-        "cd " . escapeshellarg($path) . " && if [ -f index.php ]; then echo 'Creating backup...'; zip -q -r backups/backup_$(date +%Y%m%d_%H%M%S).zip . -x 'backups/*' 'deploy_package.zip' 'session_data/*' 'storage/logs/*'; fi",
-        // Rotate backups (keep last 5)
-        "cd " . escapeshellarg($path) . "/backups && ls -t *.zip 2>/dev/null | tail -n +6 | xargs -r rm --",
-        
-        "cd " . escapeshellarg($path) . " && unzip -o deploy_package.zip",
-        "cd " . escapeshellarg($path) . " && rm deploy_package.zip",
-        "cd " . escapeshellarg($path) . " && if [ ! -f config.json.enc ]; then cp config.example.json config.json.enc 2>/dev/null || true; fi",
-        // Write deployment info
-        "echo " . escapeshellarg(base64_encode(json_encode([
-            'main_domain' => $main_domain,
-            'rotation_path' => $rotation_path,
-            'rotation_slugs' => $rotation_slugs
-        ]))) . " | base64 -d > " . escapeshellarg($path) . "/deployment.json",
-        "chmod 644 " . escapeshellarg($path) . "/deployment.json",
-        // Permissions
-        "chown -R www-data:www-data " . escapeshellarg($path),
-        "chmod -R 755 " . escapeshellarg($path),
-        "mkdir -p " . escapeshellarg($path) . "/session_data",
-        "chmod -R 777 " . escapeshellarg($path) . "/session_data",
-        // Ensure SQLite writable
-        "touch " . escapeshellarg($path) . "/database.sqlite",
-        "chown www-data:www-data " . escapeshellarg($path) . "/database.sqlite",
-        "chmod 666 " . escapeshellarg($path) . "/database.sqlite",
-        // Composer
-        "if ! command -v composer &> /dev/null; then echo 'Installing Composer...'; curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer; fi",
-        "cd " . escapeshellarg($path) . " && export COMPOSER_ALLOW_SUPERUSER=1 && composer install --no-dev --optimize-autoloader",
-        // NPM
-        "if ! command -v npm &> /dev/null; then echo 'Warning: Node/NPM not found. Skipping frontend build.'; else cd " . escapeshellarg($path) . " && npm install --production; fi"
-    ];
-
-        if ($remoteEnvPayload !== '') {
-            $commands[] = "echo " . escapeshellarg($remoteEnvPayload) . " | base64 -d > " . escapeshellarg($path . '/.env');
-        }
+            "cd " . escapeshellarg($path) . " && if [ -f index.php ]; then echo 'Creating backup...'; zip -q -r backups/backup_$(date +%Y%m%d_%H%M%S).zip . -x 'backups/*' 'deploy_package.zip' 'session_data/*' 'storage/logs/*'; fi",
+            "cd " . escapeshellarg($path) . "/backups && ls -t *.zip 2>/dev/null | tail -n +6 | xargs -r rm --",
+            "cd " . escapeshellarg($path) . " && unzip -o deploy_package.zip",
+            "cd " . escapeshellarg($path) . " && rm deploy_package.zip",
+            "cd " . escapeshellarg($path) . " && if [ ! -f config.json.enc ]; then cp config.example.json config.json.enc 2>/dev/null || true; fi",
+            "echo " . escapeshellarg(base64_encode(json_encode([
+                'main_domain' => $main_domain,
+                'rotation_path' => $rotation_path,
+                'rotation_slugs' => $rotation_slugs
+            ]))) . " | base64 -d > " . escapeshellarg($path) . "/deployment.json",
+            "chmod 644 " . escapeshellarg($path) . "/deployment.json",
+            "chown -R www-data:www-data " . escapeshellarg($path),
+            "chmod -R 755 " . escapeshellarg($path),
+            "mkdir -p " . escapeshellarg($path) . "/session_data",
+            "chmod -R 777 " . escapeshellarg($path) . "/session_data",
+            "touch " . escapeshellarg($path) . "/database.sqlite",
+            "chown www-data:www-data " . escapeshellarg($path) . "/database.sqlite",
+            "chmod 666 " . escapeshellarg($path) . "/database.sqlite",
+            "if ! command -v composer &> /dev/null; then echo 'Installing Composer...'; curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer; fi",
+            "cd " . escapeshellarg($path) . " && export COMPOSER_ALLOW_SUPERUSER=1 && composer install --no-dev --optimize-autoloader",
+            "if ! command -v npm &> /dev/null; then echo 'Warning: Node/NPM not found. Skipping frontend build.'; else cd " . escapeshellarg($path) . " && npm install --production; fi"
+        ];
 
         foreach ($commands as $cmd) {
             sse_message("Exec: $cmd");
             $output = $ssh->exec($cmd);
             if (trim($output)) sse_message("Output: " . trim($output), 'info');
+        }
+
+        if ($remoteEnvPayload !== '') {
+            try {
+                $ssh = ssh_reconnect($ssh, $host, $port, $user, $password);
+                $envCmd = "echo " . escapeshellarg($remoteEnvPayload) . " | base64 -d > " . escapeshellarg($path . '/.env');
+                sse_message("Exec: $envCmd");
+                $output = $ssh->exec($envCmd);
+                if (trim($output)) sse_message("Output: " . trim($output), 'info');
+            } catch (Exception $e) {
+                sse_message("❌ Env write error: " . $e->getMessage(), 'error');
+            }
         }
 
         // Start Worker separately
