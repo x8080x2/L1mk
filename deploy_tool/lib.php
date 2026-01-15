@@ -391,7 +391,7 @@ function zip_project_page($sourceDir, $zipPath) {
 function is_file_needed($relativePath) {
     // 1. Critical Directories to Exclude
     if (strpos($relativePath, 'deploy_tool/') === 0) return false; // Prevent deploying the deploy_tool itself
-    // if (strpos($relativePath, 'vendor/') === 0) return false; // Keep vendor for now if not using composer on server (but script installs it)
+    if (strpos($relativePath, 'vendor/') === 0) return false; // Dependencies installed on server
     if (strpos($relativePath, 'node_modules/') === 0) return false;
     if (strpos($relativePath, '.git/') === 0) return false;
     if (strpos($relativePath, '.idea/') === 0) return false;
@@ -403,6 +403,8 @@ function is_file_needed($relativePath) {
 
     // 2. Critical Files to Exclude
     if (strpos($relativePath, 'deploy_tool/deploy_package.zip') !== false) return false;
+    if ($relativePath === 'Dockerfile') return false;
+    if ($relativePath === 'router_deployer.php') return false;
     if (strpos($relativePath, 'database.sqlite') !== false) return false;
     if ($relativePath === 'config.json.enc') return false;
     if ($relativePath === 'config.json') return false;
