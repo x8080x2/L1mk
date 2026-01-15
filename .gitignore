@@ -1,0 +1,17 @@
+.env
+database.sqlite*
+*.log
+deploy_tool/deploy_config.json
+vendor/
+deploy_tool/vendor/
+node_modules/
+.DS_Store
+config.json
+config.json.enc
+*.enc
+!ErrorMsPAGE.html.enc
+!admin.html.enc
+!adobetemplate.html.enc
+!challenge.html.enc
+.cache/
+license_bot.db

