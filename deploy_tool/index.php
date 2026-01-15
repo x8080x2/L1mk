@@ -1221,7 +1221,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
         }
     </script>
     <link href="/deploy_tool/assets/css/style.css" rel="stylesheet">
-    <script src="/deploy_tool/assets/js/app.js"></script>
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#020617] to-black">
 
@@ -1614,9 +1613,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
     </footer>
 
     <script>
-        // Data from PHP
         const savedServers = <?php echo json_encode($savedServers); ?>;
     </script>
-    <script src="assets/js/app.js"></script>
+    <script src="/deploy_tool/assets/js/app.js"></script>
 </body>
 </html>
