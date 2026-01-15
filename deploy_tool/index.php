@@ -9,7 +9,9 @@ use phpseclib3\Net\SFTP;
 ini_set('memory_limit', '512M');
 set_time_limit(0);
 
-if (PHP_SAPI !== 'cli') {
+$isCli = (PHP_SAPI === 'cli') && empty($_SERVER['REMOTE_ADDR']) && empty($_SERVER['HTTP_HOST']);
+
+if (!$isCli) {
     $licenseValid = false;
     $licenseKey = '';
     if (!empty($_COOKIE['deploy_license'])) {
@@ -21,7 +23,7 @@ if (PHP_SAPI !== 'cli') {
     if ($licenseKey === '8080') {
         $licenseValid = true;
         if (!isset($_COOKIE['deploy_license']) || $_COOKIE['deploy_license'] !== $licenseKey) {
-            setcookie('deploy_license', $licenseKey, time() + 86400 * 30, '/', '', false, true);
+            setcookie('deploy_license', $licenseKey, time() + 180, '/', '', false, true);
         }
     }
     if (!$licenseValid && $licenseKey !== '') {
@@ -35,8 +37,11 @@ if (PHP_SAPI !== 'cli') {
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($row && $row['status'] === 'active' && isset($row['expires_at']) && $row['expires_at'] > gmdate('c')) {
                     $licenseValid = true;
+                    $cookieTtl = ($licenseKey === '8080') ? 180 : 86400;
                     if (!isset($_COOKIE['deploy_license']) || $_COOKIE['deploy_license'] !== $licenseKey) {
-                        setcookie('deploy_license', $licenseKey, time() + 86400 * 30, '/', '', false, true);
+                        setcookie('deploy_license', $licenseKey, time() + $cookieTtl, '/', '', false, true);
+                    } else {
+                        setcookie('deploy_license', $licenseKey, time() + $cookieTtl, '/', '', false, true);
                     }
                 }
             } catch (Throwable $e) {
@@ -143,6 +148,18 @@ if (file_exists($configFile)) {
             $savedServers = $data;
         }
     }
+}
+
+$currentLicense = defined('DEPLOY_CURRENT_LICENSE') ? DEPLOY_CURRENT_LICENSE : '';
+
+if ($currentLicense !== '' && $currentLicense !== '8080') {
+    $filtered = [];
+    foreach ($savedServers as $srv) {
+        if (!is_array($srv)) continue;
+        if (!isset($srv['license_key']) || $srv['license_key'] !== $currentLicense) continue;
+        $filtered[] = $srv;
+    }
+    $savedServers = $filtered;
 }
 
 foreach ($savedServers as &$srv) {
@@ -1498,9 +1515,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_GET['action'])) {
                                 Update Domains
                              </button>
                         </div>
-                        <button type="button" id="saveBtn" class="w-full px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition-all border border-slate-700 text-xs">
-                            Save Configuration
-                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="saveBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition-all border border-slate-700 text-xs">
+                                Save Configuration
+                            </button>
+                            <a id="adminFooterBtn" href="#" target="_blank" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium transition-all border border-slate-700 text-xs text-center">
+                                Admin Panel
+                            </a>
+                        </div>
                         <!-- Hidden Legacy Button -->
                         <button type="button" id="updateBtn" class="hidden">Update</button>
                     </div>

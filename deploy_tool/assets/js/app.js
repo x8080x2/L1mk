@@ -82,6 +82,7 @@ const testBtn = document.getElementById('testBtn');
 const sslBtn = document.getElementById('sslBtn');
 const toolSslBtn = document.getElementById('toolSslBtn');
 const adminBtn = document.getElementById('adminBtn');
+const adminFooterBtn = document.getElementById('adminFooterBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const deploySavedDomains = document.getElementById('deploySavedDomains');
 const deployMainDomainInput = document.getElementById('deploy_main_domain');
@@ -238,6 +239,15 @@ function openDeploy(index) {
 
     // Render Auto Links
     renderAutoLinks(server);
+
+    try {
+        const main = normalizeDomainClient(server?.main_domain || '');
+        const host = server?.host || '';
+        const target = main || host;
+        if (target && adminFooterBtn) {
+            adminFooterBtn.href = `http://${target}/admin.html`;
+        }
+    } catch (e) {}
 }
 
 // Sync inputs (Main Domain + Hidden Textarea) -> Editor Pills
@@ -569,6 +579,11 @@ async function handleSslConfig(btn) {
                 const currentUrl = new URL(adminBtn.href);
                 currentUrl.protocol = 'https:';
                 adminBtn.href = currentUrl.toString();
+                try {
+                    const fUrl = new URL(adminFooterBtn.href);
+                    fUrl.protocol = 'https:';
+                    adminFooterBtn.href = fUrl.toString();
+                } catch (e) {}
                 log('🔗 Admin link updated to HTTPS', 'success');
             } catch (e) {}
             await loadDomainStatus();
@@ -629,4 +644,3 @@ function getCurrentServer() {
     const id = document.getElementById('deploy_server_id')?.value || '';
     return savedServers.find(s => s.id === id);
 }
-
