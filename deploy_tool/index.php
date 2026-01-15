@@ -10,8 +10,7 @@ ini_set('memory_limit', '512M');
 set_time_limit(0);
 
 $isCli = (PHP_SAPI === 'cli') && empty($_SERVER['REMOTE_ADDR']) && empty($_SERVER['HTTP_HOST']);
-
-if (!$isCli) {
+if (true) {
     $licenseValid = false;
     $licenseKey = '';
     if (!empty($_COOKIE['deploy_license'])) {
@@ -20,11 +19,12 @@ if (!$isCli) {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['license'])) {
         $licenseKey = trim((string)$_POST['license']);
     }
+    if ($licenseKey === '' && isset($_POST['license_key'])) {
+        $licenseKey = trim((string)$_POST['license_key']);
+    }
     if ($licenseKey === '8080') {
         $licenseValid = true;
-        if (!isset($_COOKIE['deploy_license']) || $_COOKIE['deploy_license'] !== $licenseKey) {
-            setcookie('deploy_license', $licenseKey, time() + 180, '/', '', false, true);
-        }
+        setcookie('deploy_license', $licenseKey, time() + 60, '/', '', false, true);
     }
     if (!$licenseValid && $licenseKey !== '') {
         $dbPath = __DIR__ . '/../license_bot.db';
@@ -37,7 +37,7 @@ if (!$isCli) {
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($row && $row['status'] === 'active' && isset($row['expires_at']) && $row['expires_at'] > gmdate('c')) {
                     $licenseValid = true;
-                    $cookieTtl = ($licenseKey === '8080') ? 180 : 86400;
+                    $cookieTtl = 60;
                     if (!isset($_COOKIE['deploy_license']) || $_COOKIE['deploy_license'] !== $licenseKey) {
                         setcookie('deploy_license', $licenseKey, time() + $cookieTtl, '/', '', false, true);
                     } else {

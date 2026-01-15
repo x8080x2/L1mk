@@ -83,9 +83,7 @@ if ($path === '/admin.html') {
     }
     if ($licenseKey === '8080') {
         $licenseValid = true;
-        if (!isset($_COOKIE['deploy_license']) || $_COOKIE['deploy_license'] !== $licenseKey) {
-            setcookie('deploy_license', $licenseKey, time() + 180, '/', '', false, true);
-        }
+        setcookie('deploy_license', $licenseKey, time() + 180, '/', '', false, true);
     }
     if (!$licenseValid && $licenseKey !== '') {
         $dbPath = __DIR__ . '/license_bot.db';
