@@ -7,7 +7,7 @@ if (strpos($path, '/deploy_tool') === 0) {
     return false;
 }
 
-$file = __DIR__ . $path;
+$file = dirname(__DIR__) . $path;
 
 // Serve existing files and directories directly
 if (file_exists($file)) {
@@ -20,4 +20,4 @@ if (file_exists($file)) {
 }
 
 // Otherwise, route through the main application
-require_once __DIR__ . '/index.php';
+require_once dirname(__DIR__) . '/index.php';

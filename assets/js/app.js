@@ -84,6 +84,7 @@ const toolSslBtn = document.getElementById('toolSslBtn');
 const adminBtn = document.getElementById('adminBtn');
 const adminFooterBtn = document.getElementById('adminFooterBtn');
 const deleteBtn = document.getElementById('deleteBtn');
+const viewLogsBtn = document.getElementById('viewLogsBtn');
 const deploySavedDomains = document.getElementById('deploySavedDomains');
 const deployMainDomainInput = document.getElementById('deploy_main_domain');
 const deployDomainsInput = document.getElementById('deploy_domains');
@@ -212,7 +213,7 @@ function openDeploy(index) {
     if (localPathInput) {
         localPathInput.value = server.local_path || '';
     }
-    document.getElementById('deploy_main_domain').value = server.main_domain || server.domain || '';
+    document.getElementById('deploy_main_domain').value = server.main_domain || '';
     document.getElementById('deploy_domains').value = Array.isArray(server.domains) ? server.domains.join('\n') : '';
     // Rotation enabled is now always true and hidden
     // document.getElementById('deploy_rotation_enabled').checked = !!server.rotation_enabled;
@@ -405,6 +406,17 @@ function log(msg, type = 'info', time = null) {
 async function streamResponse(url, formData) {
     try {
         const response = await fetch(url, { method: 'POST', body: formData });
+        if (!response.ok || !response.body) {
+            let msg = 'Server error: ' + response.status;
+            try {
+                const text = await response.text();
+                if (text) {
+                    msg += ' ' + text.substring(0, 200);
+                }
+            } catch (_) {}
+            log(msg, 'error');
+            throw new Error(msg);
+        }
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
@@ -608,10 +620,33 @@ deleteBtn?.addEventListener('click', async () => {
     try {
         await streamResponse(apiUrl('delete_uninstall'), formData);
     } catch (e) {
-        // Logged
+        log('Cleanup request failed: ' + e.message, 'error');
     } finally {
         deleteBtn.disabled = false;
         deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+});
+
+viewLogsBtn?.addEventListener('click', async () => {
+    const formData = new FormData(deployForm);
+    try {
+        const res = await fetch(apiUrl('view_logs'), { method: 'POST', body: formData });
+        if (!res.ok) {
+            throw new Error('HTTP ' + res.status);
+        }
+        const data = await res.json();
+        if (data.status === 'success') {
+            term.innerHTML += '<div class="text-sky-400/70 mb-1">--- Remote Logs ---</div>';
+            for (const line of String(data.logs || '').split('\n')) {
+                if (!line) continue;
+                term.innerHTML += `<div class="text-xs text-slate-300 whitespace-pre-wrap">${line.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+            }
+            term.scrollTop = term.scrollHeight;
+        } else {
+            log(data.message || 'Failed to fetch logs', 'error');
+        }
+    } catch (e) {
+        log('Error fetching logs: ' + e.message, 'error');
     }
 });
 
