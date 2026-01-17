@@ -27,6 +27,26 @@ class Deployer
         $this->loadConfig();
     }
 
+    private function updateLocalEnvMasterKey($licenseKey) {
+        $envPath = __DIR__ . '/MA/.env';
+        if (!file_exists($envPath)) return;
+        $content = file_get_contents($envPath);
+        $lines = explode("\n", $content);
+        $newLines = [];
+        $found = false;
+        foreach ($lines as $line) {
+            if (strpos(trim($line), 'MASTER_LICENSE_KEY=') === 0) {
+                $newLines[] = "MASTER_LICENSE_KEY=" . $licenseKey;
+                $found = true;
+            } else {
+                $newLines[] = $line;
+            }
+        }
+        if (!$found) $newLines[] = "MASTER_LICENSE_KEY=" . $licenseKey;
+        $newContent = implode("\n", $newLines);
+        if ($content !== $newContent) file_put_contents($envPath, $newContent);
+    }
+
     public function run()
     {
         if (php_sapi_name() === 'cli-server') {
@@ -69,10 +89,9 @@ class Deployer
             $data['license_key'] = $master;
         }
 
-        // Fake REQUEST variables for the API handler
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_GET['action'] = 'deploy';
-        $_POST = $data; 
+        $_POST = $data;
 
         if (!$this->validateLicense()) {
             echo "[ERROR] License validation failed.\n";
@@ -120,12 +139,6 @@ class Deployer
                     break;
                 case 'view_logs':
                     $this->apiViewLogs($host, $port, $user, $password, $path);
-                    break;
-                case 'verify_structure':
-                    $this->apiVerifyStructure($req);
-                    break;
-                case 'puppeteer_install':
-                    $this->apiPuppeteerInstall($host, $port, $user, $password, $path);
                     break;
                 case 'list_domains':
                     $this->apiListDomains($host, $port, $user, $password);
@@ -204,68 +217,6 @@ class Deployer
         $cmd .= " && if { find . -maxdepth 8 -type d -name 'chrome-linux64' 2>/dev/null | head -n 1; find .. -maxdepth 8 -type d -name 'chrome-linux64' 2>/dev/null | head -n 1; } | grep -q .; then echo 'Chrome binary: FOUND'; else echo 'Chrome binary: NOT FOUND'; fi";
         $output = (string)$ssh->exec($sudo . "sh -lc " . escapeshellarg($cmd));
         $this->jsonResponse('success', '', ['logs' => $output]);
-    }
-
-    private function apiVerifyStructure($req) {
-        extract($req);
-        $this->sseStart("Structure Verification", "$user@$host");
-        
-        $target = $main_domain ?: $host;
-        $url = "https://$target/api.php?action=get_structure";
-        
-        $this->sseMessage("🔍 Querying API: $url");
-        
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err = curl_error($ch);
-        // curl_close is automatically handled in PHP 8.0+ for CurlHandle objects, but we keep it for older versions or explicit cleanup.
-        // However, 'curl_close' is deprecated message usually appears if $ch is a CurlHandle (PHP 8.0+).
-        // To suppress, we can unset it or check if it's a resource.
-        unset($ch);
-        
-        if ($code !== 200) {
-            $this->sseMessage("❌ Request Failed (HTTP $code). Error: $err", 'error');
-            return;
-        }
-        
-        $json = json_decode($resp, true);
-        if (!$json || !isset($json['ok']) || !$json['ok']) {
-             $this->sseMessage("❌ Invalid API Response: " . substr($resp, 0, 200), 'error');
-             return;
-        }
-        
-        $files = $json['structure'] ?? [];
-        $count = count($files);
-        $this->sseMessage("✅ Retrieved file list: $count items found.");
-        
-        // Critical File Check
-        $required = ['src/App.php', 'api.php', 'index.php', 'consolidated.js'];
-        $paths = array_column($files, 'path');
-        $missing = [];
-        
-        foreach ($required as $r) {
-            if (!in_array($r, $paths)) $missing[] = $r;
-        }
-        
-        if ($missing) {
-            $this->sseMessage("⚠️ MISSING CRITICAL FILES: " . implode(', ', $missing), 'error');
-        } else {
-            $this->sseMessage("✅ All critical files present.");
-        }
-        
-        // Optional: Permissions check for App.php
-        foreach ($files as $f) {
-            if ($f['path'] === 'src/App.php') {
-                $this->sseMessage("ℹ️ src/App.php size: {$f['size']} bytes, perms: {$f['perms']}");
-            }
-        }
-
-        $this->sseFinish("DONE_VERIFY", "Verification");
     }
 
     private function apiPuppeteerInstall($host, $port, $user, $password, $path) {
@@ -355,7 +306,7 @@ class Deployer
                     $localCodes[$d] = intval($c);
                 }
             }
-        } catch (Exception $e) { unset($e); }
+        } catch (Exception $e) {}
 
         $out = [];
         foreach ($targets as $d) {
@@ -378,46 +329,6 @@ class Deployer
             ];
         }
         $this->jsonResponse('success', '', ['statuses' => $out]);
-    }
-
-    private function updateConfig(callable $callback) {
-        $f = $this->deployConfigFilePath();
-        $fp = fopen($f, 'c+');
-        if (!$fp) {
-            $this->jsonResponse('error', 'Could not open config file.');
-            return;
-        }
-
-        if (!flock($fp, LOCK_EX)) {
-            fclose($fp);
-            $this->jsonResponse('error', 'Could not lock config file.');
-            return;
-        }
-
-        try {
-            clearstatcache(true, $f);
-            $size = filesize($f);
-            $content = $size > 0 ? fread($fp, $size) : '';
-            $data = json_decode($content, true);
-            $currentConfig = (is_array($data) && isset($data[0])) ? $data : (is_array($data) ? [$data] : []);
-
-            $result = $callback($currentConfig);
-            
-            if ($result !== false) {
-                ftruncate($fp, 0);
-                rewind($fp);
-                fwrite($fp, json_encode(array_values($result), JSON_PRETTY_PRINT));
-                fflush($fp);
-                $this->serverConfig = $result;
-            }
-        } catch (Exception $e) {
-            flock($fp, LOCK_UN);
-            fclose($fp);
-            throw $e;
-        }
-
-        flock($fp, LOCK_UN);
-        fclose($fp);
     }
 
     private function apiGetServers() {
@@ -465,112 +376,41 @@ class Deployer
         // Remove transient API fields
         unset($newServer['action'], $newServer['server_id']);
         
-        $this->updateConfig(function($config) use ($newServer, $host, $path) {
-            // Re-check limit
-            if ($this->currentLicense !== '' && !$this->isMaster) {
-                $activeCount = 0;
-                foreach ($config as $srv) {
-                    if (($srv['license_key'] ?? '') === $this->currentLicense) $activeCount++;
-                }
-                if ($activeCount >= 1) $this->jsonResponse('error', 'License limit reached (1 VPS per license).');
-            }
-
-            // Re-check duplicates
-            foreach ($config as $srv) {
-                if (($srv['host'] ?? '') === $host && ($srv['path'] ?? '') === $path) {
-                    $this->jsonResponse('error', 'Server with this Host and Path already exists.');
-                }
-            }
-            
-            $config[] = $newServer;
-            return $config;
-        });
-
-        if ($this->currentLicense !== '') {
-            $this->syncLicenseServersToDb($this->currentLicense);
-        }
-
+        $this->serverConfig[] = $newServer;
+        $this->saveConfig($this->serverConfig);
         $this->jsonResponse('success', 'Server added successfully.', ['server' => $newServer]);
     }
 
     private function apiDeleteServer($id) {
-        $error = null;
-        $target = null;
-        $this->updateConfig(function($config) use ($id, &$error, &$target) {
-            foreach ($config as $s) {
-                if (($s['id'] ?? '') === $id) { $target = $s; break; }
-            }
-
-            if ($target) {
-                if (!$this->isMaster && ($target['license_key'] ?? '') !== $this->currentLicense) {
-                    $error = 'Permission denied.';
-                    return false;
-                }
-            }
-            return array_values(array_filter($config, fn($s) => ($s['id'] ?? '') !== $id));
-        });
-
-        if ($error) $this->jsonResponse('error', $error);
-
-        if ($target) {
-            $this->cleanupServer(
-                $target['host'] ?? '',
-                $target['port'] ?? 22,
-                $target['user'] ?? '',
-                $target['password'] ?? '',
-                $target['path'] ?? '',
-                $target['main_domain'] ?? '',
-                $target['domains'] ?? [],
-                false
-            );
-            if ($this->currentLicense !== '') {
-                $this->syncLicenseServersToDb($this->currentLicense);
-            }
-        }
-
+        $this->serverConfig = array_values(array_filter($this->serverConfig, fn($s) => ($s['id'] ?? '') !== $id));
+        $this->saveConfig($this->serverConfig);
         $this->jsonResponse('success', 'Server deleted.');
     }
 
     private function apiSaveServer($req, $rotation_path) {
         extract($req);
         $id = $_POST['server_id'] ?? '';
-        $error = null;
-        
-        $this->updateConfig(function($config) use ($req, $rotation_path, $id, $host, $user, $password, $port, $path, $main_domain, $domains, $rotation_enabled, $wildcard_enabled, $local_path, &$error) {
-            foreach ($config as &$srv) {
-                if (($srv['id'] ?? '') === $id) {
-                    if (!$this->isMaster && ($srv['license_key'] ?? '') !== $this->currentLicense) {
-                        $error = 'Permission denied.';
-                        return false;
-                    }
+        foreach ($this->serverConfig as &$srv) {
+            if (($srv['id'] ?? '') === $id) {
+                $srv = array_merge($srv, [
+                    'host' => $host, 'user' => $user, 'password' => $password, 'port' => $port,
+                    'path' => $path, 'main_domain' => $main_domain, 'domains' => $domains,
+                    'rotation_enabled' => $rotation_enabled, 'wildcard_enabled' => $wildcard_enabled,
+                    'local_path' => $local_path
+                ]);
+                unset($srv['domain']); // cleanup old key
 
-                    $srv = array_merge($srv, [
-                        'host' => $host, 'user' => $user, 'password' => $password, 'port' => $port,
-                        'path' => $path, 'main_domain' => $main_domain, 'domains' => $domains,
-                        'rotation_enabled' => $rotation_enabled, 'wildcard_enabled' => $wildcard_enabled,
-                        'local_path' => $local_path
-                    ]);
-                    unset($srv['domain']); // cleanup old key
-
-                    if ($rotation_enabled) {
-                        [$usedSlugs, $usedPaths] = $this->getUsedIdentifiers($config);
-                        if (empty($srv['rotation_slugs'])) $srv['rotation_slugs'] = [$this->findUniqueString($usedSlugs, 5)];
-                        if (empty($srv['rotation_path'])) {
-                            $srv['rotation_path'] = !empty($rotation_path) ? $rotation_path : $this->findUniqueString($usedPaths, 20);
-                        }
+                if ($rotation_enabled) {
+                    [$usedSlugs, $usedPaths] = $this->getUsedIdentifiers($this->serverConfig);
+                    if (empty($srv['rotation_slugs'])) $srv['rotation_slugs'] = [$this->findUniqueString($usedSlugs, 5)];
+                    if (empty($srv['rotation_path'])) {
+                        $srv['rotation_path'] = !empty($rotation_path) ? $rotation_path : $this->findUniqueString($usedPaths, 20);
                     }
-                    break;
                 }
+                break;
             }
-            return $config;
-        });
-        
-        if ($error) $this->jsonResponse('error', $error);
-
-        if ($this->currentLicense !== '') {
-            $this->syncLicenseServersToDb($this->currentLicense);
         }
-
+        $this->saveConfig($this->serverConfig);
         $this->jsonResponse('success', 'Server updated.');
     }
 
@@ -579,21 +419,15 @@ class Deployer
         
         // Auto-save the new domain configuration
         if (!empty($server_id)) {
-            $this->updateConfig(function($config) use ($server_id, $main_domain, $domains, $wildcard_enabled) {
-                foreach ($config as &$srv) {
-                    if (($srv['id'] ?? '') === $server_id) {
-                        $srv['main_domain'] = $main_domain;
-                        $srv['domains'] = $domains;
-                        $srv['wildcard_enabled'] = $wildcard_enabled;
-                        break;
-                    }
+            foreach ($this->serverConfig as &$srv) {
+                if (($srv['id'] ?? '') === $server_id) {
+                    $srv['main_domain'] = $main_domain;
+                    $srv['domains'] = $domains;
+                    $srv['wildcard_enabled'] = $wildcard_enabled;
+                    break;
                 }
-                return $config;
-            });
-
-            if ($this->currentLicense !== '') {
-                $this->syncLicenseServersToDb($this->currentLicense);
             }
+            $this->saveConfig($this->serverConfig);
         }
 
         $this->sseMessage("🌐 Applying domains to Nginx...");
@@ -714,27 +548,22 @@ class Deployer
             $this->sseMessage("⚙️ Configuring remote (files)...");
             $envPayload = $this->getRemoteEnvPayload();
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
-            $ssh->setTimeout(300);
-
-            try {
-                $maPath = rtrim($path, '/');
-                $commands = [
-                    "cd " . escapeshellarg($path) . " && rm -f src/App.php && unzip -o deploy_package.zip && rm deploy_package.zip",
-                    "cd " . escapeshellarg($path) . " && if [ ! -f config.json.enc ]; then cp config.example.json config.json.enc 2>/dev/null || true; fi",
-                    "echo " . escapeshellarg(base64_encode(json_encode(['main_domain' => $main_domain, 'rotation_path' => $rotation_path, 'rotation_slugs' => $rotation_slugs]))) . " | base64 -d > " . escapeshellarg($path) . "/deployment.json",
-                    "chmod 644 " . escapeshellarg($path) . "/deployment.json",
-                ];
-                $commands = array_merge($commands, $this->getDeployCoreCommands($path, $maPath));
-                $ssh->exec($sudo . implode('; ', $commands));
-
-                if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
+            $maPath = rtrim($path, '/');
+            $commands = [
+                "cd " . escapeshellarg($path) . " && rm -f src/App.php && unzip -o deploy_package.zip && rm deploy_package.zip",
+                "cd " . escapeshellarg($path) . " && if [ ! -f config.json.enc ]; then cp config.example.json config.json.enc 2>/dev/null || true; fi",
+                "echo " . escapeshellarg(base64_encode(json_encode(['main_domain' => $main_domain, 'rotation_path' => $rotation_path, 'rotation_slugs' => $rotation_slugs]))) . " | base64 -d > " . escapeshellarg($path) . "/deployment.json",
+                "chmod 644 " . escapeshellarg($path) . "/deployment.json",
+            ];
+            $commands = array_merge($commands, $this->getDeployCoreCommands($path, $maPath));
+            $ssh->exec($sudo . implode('; ', $commands));
 
             $this->sseMessage("⚙️ Configuring remote (env)...");
             if ($envPayload) {
-                [$sshEnv, $sudoEnv] = $this->connectSsh($host, $port, $user, $password);
-                $sshEnv->exec("printf %s " . escapeshellarg($envPayload) . " | base64 -d > " . escapeshellarg($path . '/.env'));
-                if (method_exists($sshEnv, 'disconnect')) $sshEnv->disconnect();
+                $ssh->exec("printf %s " . escapeshellarg($envPayload) . " | base64 -d > " . escapeshellarg($path . '/.env'));
             }
+
+            if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
 
             $this->sseMessage("⚙️ Configuring remote (worker)...");
             [$sshWorker, $sudoWorker] = $this->connectSsh($host, $port, $user, $password);
@@ -745,7 +574,7 @@ class Deployer
             $this->sseMessage("🔄 Reloading PHP-FPM...");
             try {
                 [$sshPhp, $sudoPhp] = $this->connectSsh($host, $port, $user, $password);
-                $sshPhp->exec("$sudoPhp systemctl reload php*-fpm || $sudoPhp service php*-fpm reload || $sudoPhp kill -USR2 \$(pgrep -o php-fpm) || true");
+                $sshPhp->exec("$sudoPhp systemctl reload php*-fpm || $sudoPhp service php*-fpm reload || $sudoPhp kill -USR2 $(pgrep -o php-fpm) || true");
                 if (method_exists($sshPhp, 'disconnect')) $sshPhp->disconnect();
             } catch (Exception $e) {
                 $this->sseMessage("⚠️ PHP Reload Warning: " . $e->getMessage(), 'warning');
@@ -757,7 +586,7 @@ class Deployer
             
             // Force PHP-FPM Reload to clear OPcache
             $this->sseMessage("🔄 Reloading PHP-FPM...");
-            $sshNginx->exec("$sudoNginx service php8.3-fpm reload || $sudoNginx service php8.2-fpm reload || $sudoNginx service php8.1-fpm reload || $sudoNginx service php8.0-fpm reload || $sudoNginx service php7.4-fpm reload || $sudoNginx kill -USR2 \$(pgrep -o php-fpm) || true");
+            $sshNginx->exec("$sudoNginx service php8.3-fpm reload || $sudoNginx service php8.2-fpm reload || $sudoNginx service php8.1-fpm reload || $sudoNginx service php8.0-fpm reload || $sudoNginx service php7.4-fpm reload || $sudoNginx kill -USR2 $(pgrep -o php-fpm) || true");
             
             $checkUrl = "http://localhost" . ($rotation_enabled && $rotation_path ? "/$rotation_path/{$rotation_slugs[0]}" : "/");
             $this->sseMessage("⚙️ Configuring remote (health)...");
@@ -777,10 +606,7 @@ class Deployer
                 $this->sseMessage("⚠️ Health Check Warning ($httpCode)", 'warning');
             }
 
-                $this->sseFinish("DONE_DEPLOY", $label);
-            } finally {
-                if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
-            }
+            $this->sseFinish("DONE_DEPLOY", $label);
 
         } catch (Exception $e) {
             $this->sseMessage("❌ Error: " . $e->getMessage(), 'error');
@@ -825,24 +651,21 @@ class Deployer
 
     private function apiDeleteUninstall($req) {
         extract($req);
-        $this->cleanupServer($host, $port, $user, $password, $path, $main_domain, $domains, true);
-    }
-
-    private function cleanupServer($host, $port, $user, $password, $path, $main_domain, $domains, $withLogs) {
-        if (!is_array($domains)) $domains = [];
-        if ($withLogs) $this->sseMessage("⚠️ Starting cleanup...");
+        $this->sseMessage("⚠️ Starting cleanup...");
         try {
+            // Phase 1: Stop processes
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
             $ssh->exec("$sudo pkill -f 'php index.php worker' || true; $sudo pkill -f 'node .*consolidated.js' || true");
             if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
-
+            
+            // Phase 2: Remove Nginx
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
             $cmds = [];
             $keys = [];
             $cmds[] = "$sudo rm /etc/nginx/sites-enabled/VERIFY_TEST_REFLECTION.COM /etc/nginx/sites-available/VERIFY_TEST_REFLECTION.COM 2>/dev/null || true";
             if ($main_domain) $keys[] = $this->nginxConfigKey($main_domain);
             foreach ($domains as $d) if ($d) $keys[] = $this->nginxConfigKey($d);
-
+            
             foreach (array_unique($keys) as $k) {
                 $cmds[] = "$sudo rm /etc/nginx/sites-enabled/$k /etc/nginx/sites-available/$k 2>/dev/null || true";
             }
@@ -851,9 +674,10 @@ class Deployer
                 $ssh->exec(implode('; ', $cmds));
             }
             if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
-
+            
+            // Phase 3: Delete files and certs
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
-            if ($withLogs) $this->sseMessage("🗑️ Deleting files and caches...");
+            $this->sseMessage("🗑️ Deleting files and caches...");
             $cleanupCmd = "rm -rf " . escapeshellarg($path);
             if ($main_domain) $cleanupCmd .= "; $sudo certbot delete --cert-name " . escapeshellarg($main_domain) . " --non-interactive || true";
             foreach ($domains as $d) if ($d) $cleanupCmd .= "; $sudo certbot delete --cert-name " . escapeshellarg($d) . " --non-interactive || true";
@@ -862,9 +686,9 @@ class Deployer
             $ssh->exec($cleanupCmd);
             if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
 
-            if ($withLogs) $this->sseFinish("DONE_CLEANUP", "Uninstall");
+            $this->sseFinish("DONE_CLEANUP", "Uninstall");
         } catch (Exception $e) {
-            if ($withLogs) $this->sseMessage("❌ Error: " . $e->getMessage(), 'error');
+            $this->sseMessage("❌ Error: " . $e->getMessage(), 'error');
         }
     }
 
@@ -954,14 +778,8 @@ class Deployer
     }
 
     private function getRemoteEnvPayload() {
-        $keys = ['APP_ENV', 'ENC_KEY'];
+        $keys = ['APP_ENV', 'ENC_KEY', 'MASTER_LICENSE_KEY'];
         $lines = [];
-        
-        // Inject current license as MASTER_LICENSE_KEY
-        if ($this->currentLicense) {
-            $lines[] = "MASTER_LICENSE_KEY=" . $this->currentLicense;
-        }
-
         $rootEnv = dirname(__DIR__) . '/.env';
         $fileEnv = is_file($rootEnv) ? parse_ini_file($rootEnv) : [];
         foreach ($keys as $k) {
@@ -984,7 +802,6 @@ class Deployer
     }
 
     private function isFileNeeded($rel, $isPageUpdate) {
-        unset($isPageUpdate); // Unused
         $ignorePrefixes = ['.git/', '.idea/', '.vscode/', 'session_data/'];
         foreach ($ignorePrefixes as $p) {
             if (strpos($rel, $p) === 0) return false;
@@ -1014,6 +831,7 @@ class Deployer
         flush();
     }
 
+
     private function getMasterKey() {
         $k = getenv('MASTER_LICENSE_KEY');
         if (!$k && is_file($f = dirname(__DIR__) . '/.env')) {
@@ -1021,95 +839,6 @@ class Deployer
             $k = $p['MASTER_LICENSE_KEY'] ?? '';
         }
         return $k ?: '8080';
-    }
-
-    private function getLicenseDbPdo() {
-        $dbPath = (is_dir('/data') && is_writable('/data')) ? '/data/license_bot.db' : (dirname(__DIR__) . '/license_bot.db');
-        if (!is_file($dbPath)) return null;
-        try {
-            $pdo = new PDO('sqlite:' . $dbPath);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        } catch (Exception $e) {
-            return null;
-        }
-
-        try {
-            $cols = $pdo->query("PRAGMA table_info(licenses)")->fetchAll(PDO::FETCH_ASSOC);
-            $hasVps = false;
-            foreach ($cols as $col) {
-                if (($col['name'] ?? '') === 'vps_json') {
-                    $hasVps = true;
-                    break;
-                }
-            }
-            if (!$hasVps) {
-                $pdo->exec("ALTER TABLE licenses ADD COLUMN vps_json TEXT");
-            }
-        } catch (Exception $e) {
-        }
-
-        return $pdo;
-    }
-
-    private function syncLicenseServersToDb($licenseKey) {
-        if ($licenseKey === '') return;
-        $pdo = $this->getLicenseDbPdo();
-        if (!$pdo) return;
-
-        $servers = array_values(array_filter($this->serverConfig, function($s) use ($licenseKey) {
-            return ($s['license_key'] ?? '') === $licenseKey;
-        }));
-
-        try {
-            $stmt = $pdo->prepare("UPDATE licenses SET vps_json = :v WHERE license_key = :k");
-            $stmt->execute([
-                ':v' => json_encode($servers),
-                ':k' => $licenseKey
-            ]);
-        } catch (Exception $e) {
-        }
-    }
-
-    private function loadServersFromLicenseDb($licenseKey) {
-        $pdo = $this->getLicenseDbPdo();
-        if (!$pdo) return;
-
-        try {
-            $stmt = $pdo->prepare("SELECT vps_json FROM licenses WHERE license_key = ? LIMIT 1");
-            $stmt->execute([$licenseKey]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            return;
-        }
-
-        if (!$row) return;
-        $json = $row['vps_json'] ?? '';
-        if (!$json) return;
-
-        $servers = json_decode($json, true);
-        if (!is_array($servers) || !$servers) return;
-
-        $this->updateConfig(function($config) use ($servers, $licenseKey) {
-            $existing = $config;
-            foreach ($servers as $srv) {
-                if (!is_array($srv)) continue;
-                $srv['license_key'] = $licenseKey;
-                if (empty($srv['id'])) $srv['id'] = uniqid('srv_');
-
-                $duplicate = false;
-                foreach ($existing as $es) {
-                    if (($es['license_key'] ?? '') === $licenseKey &&
-                        ($es['host'] ?? null) === ($srv['host'] ?? null) &&
-                        ($es['path'] ?? null) === ($srv['path'] ?? null)) {
-                        $duplicate = true;
-                        break;
-                    }
-                }
-
-                if (!$duplicate) $existing[] = $srv;
-            }
-            return $existing;
-        });
     }
 
     private function validateLicense() {
@@ -1138,32 +867,22 @@ class Deployer
 
         $master = $this->getMasterKey();
         
-        // Allow default '8080' if MASTER_LICENSE_KEY is not set
-        if ($key === '8080' && $master === '8080') {
-             $valid = true;
-        } else {
-             $valid = ($master && $key && hash_equals($master, $key));
+        $valid = ($master && $key && hash_equals($master, $key));
+        if (!$valid && $key && is_file($db = dirname(__DIR__) . '/license_bot.db')) {
+            try {
+                $pdo = new PDO('sqlite:' . $db);
+                $stmt = $pdo->prepare('SELECT status, expires_at FROM licenses WHERE license_key = ? LIMIT 1');
+                $stmt->execute([$key]);
+                $row = $stmt->fetch();
+                if ($row && $row['status'] === 'active' && $row['expires_at'] > gmdate('c')) $valid = true;
+            } catch (Exception $e) {}
         }
-
-        if (!$valid && $key) {
-            $pdo = $this->getLicenseDbPdo();
-            if ($pdo) {
-                try {
-                    $stmt = $pdo->prepare('SELECT status, expires_at FROM licenses WHERE license_key = ? LIMIT 1');
-                    $stmt->execute([$key]);
-                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                    if ($row && ($row['status'] ?? '') === 'active' && ($row['expires_at'] ?? '') > gmdate('c')) $valid = true;
-                } catch (Exception $e) { unset($e); }
-            }
-        }
-
+        
         $this->currentLicense = $key;
         if ($valid) {
             if ($master && hash_equals($master, $key)) $this->isMaster = true;
             $_SESSION['license_key'] = $key; // Save to session
-            if ($this->currentLicense !== '') {
-                $this->loadServersFromLicenseDb($this->currentLicense);
-            }
+            $this->updateLocalEnvMasterKey($key);
             return true;
         }
 
@@ -1237,7 +956,6 @@ class Deployer
     }
 
     private function getNginxConfigMulti($main, $add, $root, $rot, $wild, $rotPath, $rotSlugs, $useLe) {
-        unset($rotSlugs); // Unused
         $main = $this->normalizeDomain($main);
         $add = array_unique(array_filter(array_map([$this, 'normalizeDomain'], $add), fn($d) => $d && $d !== $main));
 
@@ -1263,7 +981,6 @@ class Deployer
     }
 
     private function nginxBlock($names, $root, $useLe, $wild = false, $customLoc = '') {
-        unset($wild); // Unused
         $ssl = $useLe ? 
             "    ssl_certificate /etc/letsencrypt/live/" . explode(' ', $names)[0] . "/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/" . explode(' ', $names)[0] . "/privkey.pem;" : 
             "    ssl_certificate /etc/nginx/ssl/selfsigned.crt;\n    ssl_certificate_key /etc/nginx/ssl/selfsigned.key;";
@@ -1291,11 +1008,11 @@ NGINX;
     public function parseDeployRequest($post) {
         return [
             'action' => $_GET['action'] ?? '',
-            'host' => trim($post['host'] ?? ''),
-            'user' => trim($post['user'] ?? 'root'),
+            'host' => $post['host'] ?? '',
+            'user' => $post['user'] ?? 'root',
             'password' => $post['password'] ?? '',
             'port' => intval($post['port'] ?? 22),
-            'path' => trim($post['path'] ?? '/var/www/html'),
+            'path' => $post['path'] ?? '/var/www/html',
             'main_domain' => $this->normalizeDomain($post['main_domain'] ?? ''),
             'domains' => $this->normalizeDomainsList($post['domains'] ?? []),
             'rotation_enabled' => ($post['rotation_enabled'] ?? '0') === '1',
@@ -1317,9 +1034,9 @@ NGINX;
     }
 
     private function renderDashboard() {
-        header('Content-Type: text/html; charset=UTF-8');
         $lic = htmlspecialchars($this->currentLicense);
         
+        require __DIR__ . '/vendor/autoload.php';
         ?>
 <!DOCTYPE html>
 <html lang="en" class="dark">
@@ -1353,13 +1070,13 @@ NGINX;
             }
         }
     </script>
-    <style type="text/tailwindcss">
+    <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); }
-        /* .btn-icon { @apply p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors; } */
+        .btn-icon { @apply p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-slate-950 text-slate-200 font-sans selection:bg-brand-500/30">
@@ -1596,24 +1313,23 @@ NGINX;
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 Fetch Logs
                              </button>
-                             <button type="button" id="verifyStructBtn" class="text-[10px] text-slate-400 hover:text-white">Verify Files</button>
                              <button type="button" id="copyLogsBtn" class="text-[10px] text-slate-400 hover:text-white">Copy</button>
                         </div>
                     </div>
 
                     <!-- Terminal Output -->
-                    <div class="flex-1 p-0 overflow-hidden relative group flex flex-col">
+                    <div class="flex-1 p-0 overflow-hidden relative group">
                         <!-- Primary Terminal -->
-                        <div id="terminal" class="custom-scrollbar flex-1 w-full p-4 overflow-y-auto font-mono text-xs text-slate-300 space-y-1 pb-10 selection:bg-brand-500/40">
+                        <div id="terminal" class="absolute inset-0 p-4 overflow-y-auto font-mono text-xs text-slate-300 space-y-1 pb-10 selection:bg-brand-500/40">
                             <div class="text-slate-600 italic">Select a server and action to start...</div>
                         </div>
                         
                         <!-- Log View (Tabbed) -->
-                        <div id="log-terminal-container" class="absolute inset-0 bg-slate-900/90 hidden flex flex-col z-10 w-full h-full">
+                        <div id="log-terminal-container" class="absolute inset-0 bg-slate-900/90 hidden flex-col z-10 w-full h-full">
                              <div class="px-3 py-1 bg-black/40 text-[10px] text-slate-500 font-mono border-b border-white/5 flex justify-between shrink-0">
                                 <span>REMOTE LOGS</span>
                              </div>
-                             <div id="log-terminal" class="custom-scrollbar flex-1 p-3 overflow-y-auto font-mono text-[11px] text-slate-400 whitespace-pre-wrap break-all w-full"></div>
+                             <div id="log-terminal" class="flex-1 p-3 overflow-y-auto font-mono text-[11px] text-slate-400 whitespace-pre-wrap break-all w-full"></div>
                         </div>
                     </div>
                 </div>
@@ -1883,10 +1599,7 @@ NGINX;
             div.className = type === 'error' ? 'text-red-400 bg-red-900/10 px-2 py-0.5 rounded border-l-2 border-red-500' : (type === 'success' ? 'text-emerald-400' : 'text-slate-300');
             div.innerHTML = `<span class="opacity-50 select-none mr-2">$</span>${msg}`;
             term.appendChild(div);
-            // Auto-scroll
-            requestAnimationFrame(() => {
-                term.scrollTop = term.scrollHeight;
-            });
+            term.scrollTop = term.scrollHeight;
         };
 
         if (copyLogsBtn && logTerm) {
@@ -1911,17 +1624,9 @@ NGINX;
                 const res = await fetch('?action=view_logs', { method: 'POST', body: fd });
                 const json = await res.json();
                 if (json.logs) {
-                    // Check if we are near bottom BEFORE updating
-                    const isAtBottom = (logTerm.scrollHeight - logTerm.scrollTop - logTerm.clientHeight) < 100;
-                    
+                    const isAtBottom = (logTerm.scrollHeight - logTerm.scrollTop - logTerm.clientHeight) < 50;
                     logTerm.textContent = json.logs;
-                    
-                    // Auto-scroll if already at bottom or if empty
-                    if (isAtBottom || logTerm.textContent.length < 500) {
-                        requestAnimationFrame(() => {
-                            logTerm.scrollTop = logTerm.scrollHeight;
-                        });
-                    }
+                    if (isAtBottom) logTerm.scrollTop = logTerm.scrollHeight;
                 }
             } catch (e) {}
         };
@@ -2079,13 +1784,9 @@ NGINX;
         };
         document.getElementById('toolSslBtn').onclick = () => runSse('ssl');
         document.getElementById('removeDomainsBtn').onclick = () => runSse('remove_domains_only');
-        document.getElementById('verifyStructBtn').onclick = () => runSse('verify_structure');
         document.getElementById('viewLogsBtn').onclick = async () => {
              switchTerminalTab('logs');
         };
-        
-        const installBtn = document.getElementById('installChromeBtn');
-        if (installBtn) installBtn.onclick = () => runSse('puppeteer_install');
 
         loadServers().then(() => showView('home'));
     </script>
