@@ -717,6 +717,7 @@ class Deployer
             "chmod -R 755 $p",
             "mkdir -p $p/session_data && chmod -R 777 $p/session_data",
             "touch $p/database.sqlite && chown www-data:www-data $p/database.sqlite && chmod 666 $p/database.sqlite",
+            "cd $m/php && if [ -f composer.json ]; then if command -v composer >/dev/null 2>&1; then composer install --no-dev --optimize-autoloader; elif [ -f composer.phar ]; then php composer.phar install --no-dev --optimize-autoloader; fi; fi",
             "cd $m && if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1 && [ -f package.json ]; then HOME=$home npm install --production || HOME=$home npm install; fi",
             "cd $m && mkdir -p $cache && HOME=$home PUPPETEER_CACHE_DIR=$cache npx puppeteer browsers install chrome || true"
         ];
