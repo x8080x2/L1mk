@@ -1,22 +1,15 @@
 [
     {
+        "id": "srv_6789abcd",
         "host": "66.85.26.196",
         "user": "root",
         "password": "i047nYsHp0",
         "port": 22,
-        "path": "\/var\/www\/html",
+        "path": "/var/www/html",
         "main_domain": "winlearnchange.info",
-        "domains": [
-            "zarowka.info"
-        ],
-        "rotation_enabled": false,
-        "wildcard_enabled": true,
-        "rotation_slugs": [
-            "jsojf"
-        ],
-        "rotation_path": "8wnmt6mr6co3ddi35fd2",
-        "local_path": "\/Users\/mindedjr\/Documents\/trae_projects\/L1mk-e0f7ddac6c8164e1d8713b1ce1c503611d9e0e65",
-        "id": "srv_69695bc24db9a",
-        "license_key": "8080"
+        "domains": ["zarowka.info"],
+        "rotation_enabled": "0",
+        "wildcard_enabled": "0",
+        "local_path": "/Users/mindedjr/Documents/trae_projects/L1mk-e0f7ddac6c8164e1d8713b1ce1c503611d9e0e65"
     }
 ]

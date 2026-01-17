@@ -65,7 +65,7 @@ if ($path === '/api.php' || $path === '/api') {
 }
 
 // Admin Routing
-if ($path === '/admin.html') {
+if ($path === '/admin.html' || strpos($path, '/admin.html/') === 0) {
     $licenseValid = false;
     $licenseKey = '';
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['license'])) {

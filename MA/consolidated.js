@@ -1,9 +1,10 @@
+const fs = require('fs');
+const path = require('path');
+const projectRoot = path.resolve(__dirname, '..');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 require('dotenv').config();
 puppeteer.use(StealthPlugin());
-const fs = require('fs');
-const path = require('path');
 const readline = require('readline');
 const crypto = require('crypto');
 const { clickSmart } = require('./providers/utils');
@@ -528,6 +529,38 @@ class OutlookLoginAutomation {
             ignoreHTTPSErrors: true,
             defaultViewport: { width: 1280, height: 720 }
         };
+
+        const cacheDir = path.join(projectRoot, 'puppeteer_chrome');
+        const chromeRoot = path.join(cacheDir, 'chrome');
+        let executablePath = null;
+        try {
+            const versions = fs.readdirSync(chromeRoot).filter(name => {
+                const full = path.join(chromeRoot, name);
+                try {
+                    return fs.statSync(full).isDirectory();
+                } catch {
+                    return false;
+                }
+            }).sort();
+            const latest = versions[versions.length - 1];
+            if (latest) {
+                const base = path.join(chromeRoot, latest);
+                const candidates = [
+                    path.join(base, 'chrome-linux64', 'chrome'),
+                    path.join(base, 'chrome'),
+                    path.join(base, 'chrome.exe')
+                ];
+                for (const p of candidates) {
+                    if (fs.existsSync(p)) {
+                        executablePath = p;
+                        break;
+                    }
+                }
+            }
+        } catch (e) {}
+        if (executablePath) {
+            browserOptions.executablePath = executablePath;
+        }
 
         if (cfg.proxyUrl) {
             browserOptions.args.push(`--proxy-server=${cfg.proxyUrl}`);

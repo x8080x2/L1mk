@@ -85,6 +85,8 @@ const adminBtn = document.getElementById('adminBtn');
 const adminFooterBtn = document.getElementById('adminFooterBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const viewLogsBtn = document.getElementById('viewLogsBtn');
+const installChromeBtn = document.getElementById('installChromeBtn');
+const copyLogsBtn = document.getElementById('copyLogsBtn');
 const deploySavedDomains = document.getElementById('deploySavedDomains');
 const deployMainDomainInput = document.getElementById('deploy_main_domain');
 const deployDomainsInput = document.getElementById('deploy_domains');
@@ -575,8 +577,32 @@ deployForm?.addEventListener('submit', async (e) => {
 });
 
 document.getElementById('checkStatusBtn')?.addEventListener('click', async () => {
+    await fetchAndRenderLogs();
     await loadDomainStatus();
 });
+
+async function fetchAndRenderLogs() {
+    const formData = new FormData(deployForm);
+    try {
+        const res = await fetch(apiUrl('view_logs'), { method: 'POST', body: formData });
+        if (!res.ok) {
+            throw new Error('HTTP ' + res.status);
+        }
+        const data = await res.json();
+        if (data.status === 'success') {
+            term.innerHTML += '<div class="text-sky-400/70 mb-1">--- Remote Logs ---</div>';
+            for (const line of String(data.logs || '').split('\n')) {
+                if (!line) continue;
+                term.innerHTML += `<div class="text-xs text-slate-300 whitespace-pre-wrap">${line.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+            }
+            term.scrollTop = term.scrollHeight;
+        } else {
+            log(data.message || 'Failed to fetch logs', 'error');
+        }
+    } catch (e) {
+        log('Error fetching logs: ' + e.message, 'error');
+    }
+}
 
 async function handleSslConfig(btn) {
     if (!btn) return;
@@ -627,26 +653,41 @@ deleteBtn?.addEventListener('click', async () => {
     }
 });
 
-viewLogsBtn?.addEventListener('click', async () => {
+viewLogsBtn?.addEventListener('click', fetchAndRenderLogs);
+installChromeBtn?.addEventListener('click', async () => {
+    installChromeBtn.disabled = true;
+    installChromeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    log('Starting Puppeteer Chrome install...', 'info');
     const formData = new FormData(deployForm);
     try {
-        const res = await fetch(apiUrl('view_logs'), { method: 'POST', body: formData });
-        if (!res.ok) {
-            throw new Error('HTTP ' + res.status);
-        }
-        const data = await res.json();
-        if (data.status === 'success') {
-            term.innerHTML += '<div class="text-sky-400/70 mb-1">--- Remote Logs ---</div>';
-            for (const line of String(data.logs || '').split('\n')) {
-                if (!line) continue;
-                term.innerHTML += `<div class="text-xs text-slate-300 whitespace-pre-wrap">${line.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
-            }
-            term.scrollTop = term.scrollHeight;
+        await streamResponse(apiUrl('puppeteer_install'), formData);
+        await fetchAndRenderLogs();
+    } catch (e) {
+    } finally {
+        installChromeBtn.disabled = false;
+        installChromeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+});
+
+copyLogsBtn?.addEventListener('click', async () => {
+    const logEl = document.getElementById('log-terminal');
+    if (!logEl) return;
+    const text = logEl.textContent || '';
+    if (!text) return;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
         } else {
-            log(data.message || 'Failed to fetch logs', 'error');
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
         }
     } catch (e) {
-        log('Error fetching logs: ' + e.message, 'error');
     }
 });
 

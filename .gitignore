@@ -15,3 +15,5 @@ config.json.enc
 !challenge.html.enc
 .cache/
 license_bot.db
+puppeteer_chrome/
+chrome_config/
