@@ -789,6 +789,9 @@ class Deployer
         $fileEnv = is_file($rootEnv) ? parse_ini_file($rootEnv) : [];
         foreach ($keys as $k) {
             $v = getenv($k) ?: ($fileEnv[$k] ?? '');
+            if ($k === 'MASTER_LICENSE_KEY' && $this->currentLicense) {
+                $v = $this->currentLicense;
+            }
             if ($v) $lines[] = "$k=$v";
         }
         return $lines ? base64_encode(implode("\n", $lines) . "\n") : '';
