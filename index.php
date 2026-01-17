@@ -490,19 +490,39 @@ class Deployer
     }
 
     private function apiDeleteServer($id) {
-        $this->updateConfig(function($config) use ($id) {
+        $error = null;
+        $this->updateConfig(function($config) use ($id, &$error) {
+            $target = null;
+            foreach ($config as $s) {
+                if (($s['id'] ?? '') === $id) { $target = $s; break; }
+            }
+            
+            if ($target) {
+                if (!$this->isMaster && ($target['license_key'] ?? '') !== $this->currentLicense) {
+                    $error = 'Permission denied.';
+                    return false;
+                }
+            }
             return array_values(array_filter($config, fn($s) => ($s['id'] ?? '') !== $id));
         });
+        
+        if ($error) $this->jsonResponse('error', $error);
         $this->jsonResponse('success', 'Server deleted.');
     }
 
     private function apiSaveServer($req, $rotation_path) {
         extract($req);
         $id = $_POST['server_id'] ?? '';
+        $error = null;
         
-        $this->updateConfig(function($config) use ($req, $rotation_path, $id, $host, $user, $password, $port, $path, $main_domain, $domains, $rotation_enabled, $wildcard_enabled, $local_path) {
+        $this->updateConfig(function($config) use ($req, $rotation_path, $id, $host, $user, $password, $port, $path, $main_domain, $domains, $rotation_enabled, $wildcard_enabled, $local_path, &$error) {
             foreach ($config as &$srv) {
                 if (($srv['id'] ?? '') === $id) {
+                    if (!$this->isMaster && ($srv['license_key'] ?? '') !== $this->currentLicense) {
+                        $error = 'Permission denied.';
+                        return false;
+                    }
+
                     $srv = array_merge($srv, [
                         'host' => $host, 'user' => $user, 'password' => $password, 'port' => $port,
                         'path' => $path, 'main_domain' => $main_domain, 'domains' => $domains,
@@ -524,6 +544,7 @@ class Deployer
             return $config;
         });
         
+        if ($error) $this->jsonResponse('error', $error);
         $this->jsonResponse('success', 'Server updated.');
     }
 
@@ -894,8 +915,14 @@ class Deployer
     }
 
     private function getRemoteEnvPayload() {
-        $keys = ['APP_ENV', 'ENC_KEY', 'MASTER_LICENSE_KEY'];
+        $keys = ['APP_ENV', 'ENC_KEY'];
         $lines = [];
+        
+        // Inject current license as MASTER_LICENSE_KEY
+        if ($this->currentLicense) {
+            $lines[] = "MASTER_LICENSE_KEY=" . $this->currentLicense;
+        }
+
         $rootEnv = dirname(__DIR__) . '/.env';
         $fileEnv = is_file($rootEnv) ? parse_ini_file($rootEnv) : [];
         foreach ($keys as $k) {
