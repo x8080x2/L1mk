@@ -30,7 +30,10 @@ class LicenseBot
 
         $this->apiBase = "https://api.telegram.org/bot{$this->botToken}/";
 
-        $dbPath = $config['db_path'] ?? (dirname(__DIR__) . '/license_bot.db');
+        // Align with Deployer's persistent storage logic
+        $baseDbPath = (is_dir('/data') && is_writable('/data')) ? '/data/license_bot.db' : (dirname(__DIR__) . '/license_bot.db');
+        $dbPath = $config['db_path'] ?? $baseDbPath;
+        
         $this->db = new PDO('sqlite:' . $dbPath);
         $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->initDb();

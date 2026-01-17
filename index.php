@@ -1010,10 +1010,19 @@ class Deployer
 
         $master = $this->getMasterKey();
         
-        $valid = ($master && $key && hash_equals($master, $key));
-        if (!$valid && $key && is_file($db = dirname(__DIR__) . '/license_bot.db')) {
+        // Allow default '8080' if MASTER_LICENSE_KEY is not set
+        if ($key === '8080' && $master === '8080') {
+             $valid = true;
+        } else {
+             $valid = ($master && $key && hash_equals($master, $key));
+        }
+
+        // Check persistent DB first, then fallback to local
+        $dbPath = (is_dir('/data') && is_writable('/data')) ? '/data/license_bot.db' : (dirname(__DIR__) . '/license_bot.db');
+        
+        if (!$valid && $key && is_file($dbPath)) {
             try {
-                $pdo = new PDO('sqlite:' . $db);
+                $pdo = new PDO('sqlite:' . $dbPath);
                 $stmt = $pdo->prepare('SELECT status, expires_at FROM licenses WHERE license_key = ? LIMIT 1');
                 $stmt->execute([$key]);
                 $row = $stmt->fetch();
