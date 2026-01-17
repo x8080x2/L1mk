@@ -323,6 +323,7 @@ class Worker {
         if (curl_errno($ch)) {
             echo "❌ Telegram Curl Error: " . curl_error($ch) . "\n";
         }
+        unset($ch);
         return $result;
     }
 }
@@ -573,12 +574,12 @@ class Security {
         return false;
     }
 
-    public static function rdnsBlocked(string $ip, array $patterns): bool {
+    public static function rdnsBlocked(string $_ip, array $_patterns): bool {
         // Simplified: Disabled complex RDNS checks to avoid performance hits and complexity
         return false;
     }
 
-    public static function checkIpReputation(string $ip, string $apiKey = ''): array {
+    public static function checkIpReputation(string $_ip, string $_apiKey = ''): array {
         // Simplified: No external API calls, just basic local check stub
         return ['blocked' => false, 'reason' => ''];
     }

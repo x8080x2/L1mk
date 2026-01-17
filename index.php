@@ -69,9 +69,10 @@ class Deployer
             $data['license_key'] = $master;
         }
 
+        // Fake REQUEST variables for the API handler
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_GET['action'] = 'deploy';
-        $_POST = $data;
+        $_POST = $data; 
 
         if (!$this->validateLicense()) {
             echo "[ERROR] License validation failed.\n";
@@ -222,7 +223,10 @@ class Deployer
         $resp = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err = curl_error($ch);
-        curl_close($ch);
+        // curl_close is automatically handled in PHP 8.0+ for CurlHandle objects, but we keep it for older versions or explicit cleanup.
+        // However, 'curl_close' is deprecated message usually appears if $ch is a CurlHandle (PHP 8.0+).
+        // To suppress, we can unset it or check if it's a resource.
+        unset($ch);
         
         if ($code !== 200) {
             $this->sseMessage("❌ Request Failed (HTTP $code). Error: $err", 'error');
@@ -351,7 +355,7 @@ class Deployer
                     $localCodes[$d] = intval($c);
                 }
             }
-        } catch (Exception $e) {}
+        } catch (Exception $e) { unset($e); }
 
         $out = [];
         foreach ($targets as $d) {
@@ -636,6 +640,7 @@ class Deployer
             $checkUrl = "http://localhost" . ($rotation_enabled && $rotation_path ? "/$rotation_path/{$rotation_slugs[0]}" : "/");
             $this->sseMessage("⚙️ Configuring remote (health)...");
             [$sshHealth, $sudoHealth] = $this->connectSsh($host, $port, $user, $password);
+            unset($sudoHealth); // Unused
             $httpCode = trim($sshHealth->exec("curl -s -o /dev/null -w '%{http_code}' " . escapeshellarg($checkUrl)));
             if ($httpCode >= 200 && $httpCode < 400) {
                 $this->sseMessage("✅ Health Check Passed ($httpCode)");
@@ -847,6 +852,7 @@ class Deployer
     }
 
     private function isFileNeeded($rel, $isPageUpdate) {
+        unset($isPageUpdate); // Unused
         $ignorePrefixes = ['.git/', '.idea/', '.vscode/', 'session_data/'];
         foreach ($ignorePrefixes as $p) {
             if (strpos($rel, $p) === 0) return false;
@@ -874,11 +880,6 @@ class Deployer
         echo "data: " . json_encode(['message' => $msg, 'type' => $type, 'time' => date('H:i:s')]) . "\n\n";
         if (ob_get_level() > 0) ob_flush();
         flush();
-    }
-
-    private function remoteLog($ssh, $sudo, $path, $msg) {
-        $cmd = $sudo . "sh -lc " . escapeshellarg("cd " . $path . " && printf '[%s] %s\\n' " . date('c') . " " . escapeshellarg(substr($msg, 0, 1000)) . " | tee -a deploy.log project.log >/dev/null");
-        try { $ssh->exec($cmd); } catch (Exception $e) {}
     }
 
     private function getMasterKey() {
@@ -924,7 +925,7 @@ class Deployer
                 $stmt->execute([$key]);
                 $row = $stmt->fetch();
                 if ($row && $row['status'] === 'active' && $row['expires_at'] > gmdate('c')) $valid = true;
-            } catch (Exception $e) {}
+            } catch (Exception $e) { unset($e); }
         }
         
         $this->currentLicense = $key;
@@ -1004,6 +1005,7 @@ class Deployer
     }
 
     private function getNginxConfigMulti($main, $add, $root, $rot, $wild, $rotPath, $rotSlugs, $useLe) {
+        unset($rotSlugs); // Unused
         $main = $this->normalizeDomain($main);
         $add = array_unique(array_filter(array_map([$this, 'normalizeDomain'], $add), fn($d) => $d && $d !== $main));
 
@@ -1029,6 +1031,7 @@ class Deployer
     }
 
     private function nginxBlock($names, $root, $useLe, $wild = false, $customLoc = '') {
+        unset($wild); // Unused
         $ssl = $useLe ? 
             "    ssl_certificate /etc/letsencrypt/live/" . explode(' ', $names)[0] . "/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/" . explode(' ', $names)[0] . "/privkey.pem;" : 
             "    ssl_certificate /etc/nginx/ssl/selfsigned.crt;\n    ssl_certificate_key /etc/nginx/ssl/selfsigned.key;";
@@ -1082,9 +1085,9 @@ NGINX;
     }
 
     private function renderDashboard() {
+        header('Content-Type: text/html; charset=UTF-8');
         $lic = htmlspecialchars($this->currentLicense);
         
-        require __DIR__ . '/vendor/autoload.php';
         ?>
 <!DOCTYPE html>
 <html lang="en" class="dark">
@@ -1118,13 +1121,13 @@ NGINX;
             }
         }
     </script>
-    <style>
+    <style type="text/tailwindcss">
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); }
-        .btn-icon { @apply p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors; }
+        /* .btn-icon { @apply p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors; } */
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-slate-950 text-slate-200 font-sans selection:bg-brand-500/30">
@@ -1368,14 +1371,14 @@ NGINX;
                     </div>
 
                     <!-- Terminal Output -->
-                    <div class="flex-1 p-0 overflow-hidden relative group">
+                    <div class="flex-1 p-0 overflow-hidden relative group flex flex-col">
                         <!-- Primary Terminal -->
-                        <div id="terminal" class="custom-scrollbar absolute inset-0 p-4 overflow-y-auto font-mono text-xs text-slate-300 space-y-1 pb-10 selection:bg-brand-500/40">
+                        <div id="terminal" class="custom-scrollbar flex-1 w-full p-4 overflow-y-auto font-mono text-xs text-slate-300 space-y-1 pb-10 selection:bg-brand-500/40">
                             <div class="text-slate-600 italic">Select a server and action to start...</div>
                         </div>
                         
                         <!-- Log View (Tabbed) -->
-                        <div id="log-terminal-container" class="absolute inset-0 bg-slate-900/90 hidden flex-col z-10 w-full h-full">
+                        <div id="log-terminal-container" class="absolute inset-0 bg-slate-900/90 hidden flex flex-col z-10 w-full h-full">
                              <div class="px-3 py-1 bg-black/40 text-[10px] text-slate-500 font-mono border-b border-white/5 flex justify-between shrink-0">
                                 <span>REMOTE LOGS</span>
                              </div>
@@ -1850,27 +1853,8 @@ NGINX;
              switchTerminalTab('logs');
         };
         
-        document.getElementById('verifyScrollBtn').onclick = async () => {
-            // 1. Test Deployment Log
-            switchTerminalTab('deploy');
-            await runSse('test_ui_scroll');
-            
-            // 2. Test Application Logs (Client-side simulation)
-            switchTerminalTab('logs');
-            const logTerm = document.getElementById('log-terminal');
-            logTerm.textContent = '';
-            for(let i=1; i<=30; i++) {
-                logTerm.textContent += `[${new Date().toLocaleTimeString()}] App Log Simulation Line ${i} - Verifying auto-scroll...\n`;
-                // Manually trigger the scroll logic that refreshLogs uses
-                const isAtBottom = (logTerm.scrollHeight - logTerm.scrollTop - logTerm.clientHeight) < 100;
-                if (isAtBottom || logTerm.textContent.length < 500) {
-                    requestAnimationFrame(() => {
-                        logTerm.scrollTop = logTerm.scrollHeight;
-                    });
-                }
-                await new Promise(r => setTimeout(r, 100));
-            }
-        };
+        const installBtn = document.getElementById('installChromeBtn');
+        if (installBtn) installBtn.onclick = () => runSse('puppeteer_install');
 
         loadServers().then(() => showView('home'));
     </script>
