@@ -795,6 +795,27 @@ class Api {
         echo json_encode(['ok' => true, 'structure' => $structure]);
     }
 
+    private static function handleGetDeploymentInfo() {
+        $baseDir = realpath(__DIR__ . '/..');
+        $deploymentFile = $baseDir . '/deployment.json';
+        $data = [];
+
+        if (file_exists($deploymentFile)) {
+            $json = json_decode(file_get_contents($deploymentFile), true);
+            if (is_array($json)) {
+                $data = $json;
+            }
+        }
+        
+        $response = [
+            'main_domain' => $data['main_domain'] ?? '',
+            'rotation_path' => $data['rotation_path'] ?? 'admg',
+            'rotation_slugs' => $data['rotation_slugs'] ?? []
+        ];
+
+        echo json_encode(['ok' => true, 'data' => $response]);
+    }
+
     private static function handleSaveConfig() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);

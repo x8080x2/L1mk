@@ -131,18 +131,15 @@ class LicenseBot
         $keyboard = [
             'inline_keyboard' => [
                 [['text' => '💎 Standard Access (10 Days) - $130', 'callback_data' => 'buy|10|130']],
-                [['text' => '🚀 Professional Access (20 Days) - $210', 'callback_data' => 'buy|20|210']],
-                [['text' => '👑 Enterprise Access (30 Days) - $300', 'callback_data' => 'buy|30|300']],
+                [['text' => '🚀 Weekly Access (20 Days) - $210', 'callback_data' => 'buy|20|210']],
+                [['text' => '👑 Monthly  Access (30 Days) - $300', 'callback_data' => 'buy|30|300']],
             ]
         ];
         
-        $msg = "🔐 *Welcome to KratosLink Licensing System*\n\n" .
-               "We provide secure, premium access to the KratosLink Deployer infrastructure.\n" .
-               "Select a subscription tier below to initiate a secure transaction.\n\n" .
-               "All licenses grant full access to:\n" .
-               "• Advanced Deployment Tools\n" .
-               "• Real-time Analytics\n" .
-               "• 24/7 System Availability";
+        $msg = "🔐 *Welcome to @ClosedPages *\n\n" .
+               "We provide secure, premium access to the ClosedLink.\n" .
+               "Select a subscription plan.\n\n" .
+               "All licenses grant full access to; Advanced Deployment Tools Real-time Analytics 24/7 System Availability";
 
         $this->tgRequest('sendMessage', [
             'chat_id' => $chatId,
