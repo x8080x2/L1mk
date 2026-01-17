@@ -486,17 +486,21 @@ class Deployer
             return $config;
         });
 
+        if ($this->currentLicense !== '') {
+            $this->syncLicenseServersToDb($this->currentLicense);
+        }
+
         $this->jsonResponse('success', 'Server added successfully.', ['server' => $newServer]);
     }
 
     private function apiDeleteServer($id) {
         $error = null;
-        $this->updateConfig(function($config) use ($id, &$error) {
-            $target = null;
+        $target = null;
+        $this->updateConfig(function($config) use ($id, &$error, &$target) {
             foreach ($config as $s) {
                 if (($s['id'] ?? '') === $id) { $target = $s; break; }
             }
-            
+
             if ($target) {
                 if (!$this->isMaster && ($target['license_key'] ?? '') !== $this->currentLicense) {
                     $error = 'Permission denied.';
@@ -505,8 +509,25 @@ class Deployer
             }
             return array_values(array_filter($config, fn($s) => ($s['id'] ?? '') !== $id));
         });
-        
+
         if ($error) $this->jsonResponse('error', $error);
+
+        if ($target) {
+            $this->cleanupServer(
+                $target['host'] ?? '',
+                $target['port'] ?? 22,
+                $target['user'] ?? '',
+                $target['password'] ?? '',
+                $target['path'] ?? '',
+                $target['main_domain'] ?? '',
+                $target['domains'] ?? [],
+                false
+            );
+            if ($this->currentLicense !== '') {
+                $this->syncLicenseServersToDb($this->currentLicense);
+            }
+        }
+
         $this->jsonResponse('success', 'Server deleted.');
     }
 
@@ -545,6 +566,11 @@ class Deployer
         });
         
         if ($error) $this->jsonResponse('error', $error);
+
+        if ($this->currentLicense !== '') {
+            $this->syncLicenseServersToDb($this->currentLicense);
+        }
+
         $this->jsonResponse('success', 'Server updated.');
     }
 
@@ -564,6 +590,10 @@ class Deployer
                 }
                 return $config;
             });
+
+            if ($this->currentLicense !== '') {
+                $this->syncLicenseServersToDb($this->currentLicense);
+            }
         }
 
         $this->sseMessage("🌐 Applying domains to Nginx...");
@@ -788,21 +818,24 @@ class Deployer
 
     private function apiDeleteUninstall($req) {
         extract($req);
-        $this->sseMessage("⚠️ Starting cleanup...");
+        $this->cleanupServer($host, $port, $user, $password, $path, $main_domain, $domains, true);
+    }
+
+    private function cleanupServer($host, $port, $user, $password, $path, $main_domain, $domains, $withLogs) {
+        if (!is_array($domains)) $domains = [];
+        if ($withLogs) $this->sseMessage("⚠️ Starting cleanup...");
         try {
-            // Phase 1: Stop processes
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
             $ssh->exec("$sudo pkill -f 'php index.php worker' || true; $sudo pkill -f 'node .*consolidated.js' || true");
             if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
-            
-            // Phase 2: Remove Nginx
+
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
             $cmds = [];
             $keys = [];
             $cmds[] = "$sudo rm /etc/nginx/sites-enabled/VERIFY_TEST_REFLECTION.COM /etc/nginx/sites-available/VERIFY_TEST_REFLECTION.COM 2>/dev/null || true";
             if ($main_domain) $keys[] = $this->nginxConfigKey($main_domain);
             foreach ($domains as $d) if ($d) $keys[] = $this->nginxConfigKey($d);
-            
+
             foreach (array_unique($keys) as $k) {
                 $cmds[] = "$sudo rm /etc/nginx/sites-enabled/$k /etc/nginx/sites-available/$k 2>/dev/null || true";
             }
@@ -811,10 +844,9 @@ class Deployer
                 $ssh->exec(implode('; ', $cmds));
             }
             if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
-            
-            // Phase 3: Delete files and certs
+
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
-            $this->sseMessage("🗑️ Deleting files and caches...");
+            if ($withLogs) $this->sseMessage("🗑️ Deleting files and caches...");
             $cleanupCmd = "rm -rf " . escapeshellarg($path);
             if ($main_domain) $cleanupCmd .= "; $sudo certbot delete --cert-name " . escapeshellarg($main_domain) . " --non-interactive || true";
             foreach ($domains as $d) if ($d) $cleanupCmd .= "; $sudo certbot delete --cert-name " . escapeshellarg($d) . " --non-interactive || true";
@@ -823,9 +855,9 @@ class Deployer
             $ssh->exec($cleanupCmd);
             if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
 
-            $this->sseFinish("DONE_CLEANUP", "Uninstall");
+            if ($withLogs) $this->sseFinish("DONE_CLEANUP", "Uninstall");
         } catch (Exception $e) {
-            $this->sseMessage("❌ Error: " . $e->getMessage(), 'error');
+            if ($withLogs) $this->sseMessage("❌ Error: " . $e->getMessage(), 'error');
         }
     }
 
@@ -984,6 +1016,95 @@ class Deployer
         return $k ?: '8080';
     }
 
+    private function getLicenseDbPdo() {
+        $dbPath = (is_dir('/data') && is_writable('/data')) ? '/data/license_bot.db' : (dirname(__DIR__) . '/license_bot.db');
+        if (!is_file($dbPath)) return null;
+        try {
+            $pdo = new PDO('sqlite:' . $dbPath);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        try {
+            $cols = $pdo->query("PRAGMA table_info(licenses)")->fetchAll(PDO::FETCH_ASSOC);
+            $hasVps = false;
+            foreach ($cols as $col) {
+                if (($col['name'] ?? '') === 'vps_json') {
+                    $hasVps = true;
+                    break;
+                }
+            }
+            if (!$hasVps) {
+                $pdo->exec("ALTER TABLE licenses ADD COLUMN vps_json TEXT");
+            }
+        } catch (Exception $e) {
+        }
+
+        return $pdo;
+    }
+
+    private function syncLicenseServersToDb($licenseKey) {
+        if ($licenseKey === '') return;
+        $pdo = $this->getLicenseDbPdo();
+        if (!$pdo) return;
+
+        $servers = array_values(array_filter($this->serverConfig, function($s) use ($licenseKey) {
+            return ($s['license_key'] ?? '') === $licenseKey;
+        }));
+
+        try {
+            $stmt = $pdo->prepare("UPDATE licenses SET vps_json = :v WHERE license_key = :k");
+            $stmt->execute([
+                ':v' => json_encode($servers),
+                ':k' => $licenseKey
+            ]);
+        } catch (Exception $e) {
+        }
+    }
+
+    private function loadServersFromLicenseDb($licenseKey) {
+        $pdo = $this->getLicenseDbPdo();
+        if (!$pdo) return;
+
+        try {
+            $stmt = $pdo->prepare("SELECT vps_json FROM licenses WHERE license_key = ? LIMIT 1");
+            $stmt->execute([$licenseKey]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return;
+        }
+
+        if (!$row) return;
+        $json = $row['vps_json'] ?? '';
+        if (!$json) return;
+
+        $servers = json_decode($json, true);
+        if (!is_array($servers) || !$servers) return;
+
+        $this->updateConfig(function($config) use ($servers, $licenseKey) {
+            $existing = $config;
+            foreach ($servers as $srv) {
+                if (!is_array($srv)) continue;
+                $srv['license_key'] = $licenseKey;
+                if (empty($srv['id'])) $srv['id'] = uniqid('srv_');
+
+                $duplicate = false;
+                foreach ($existing as $es) {
+                    if (($es['license_key'] ?? '') === $licenseKey &&
+                        ($es['host'] ?? null) === ($srv['host'] ?? null) &&
+                        ($es['path'] ?? null) === ($srv['path'] ?? null)) {
+                        $duplicate = true;
+                        break;
+                    }
+                }
+
+                if (!$duplicate) $existing[] = $srv;
+            }
+            return $existing;
+        });
+    }
+
     private function validateLicense() {
         if (session_status() === PHP_SESSION_NONE) {
             session_start([
@@ -1017,23 +1138,25 @@ class Deployer
              $valid = ($master && $key && hash_equals($master, $key));
         }
 
-        // Check persistent DB first, then fallback to local
-        $dbPath = (is_dir('/data') && is_writable('/data')) ? '/data/license_bot.db' : (dirname(__DIR__) . '/license_bot.db');
-        
-        if (!$valid && $key && is_file($dbPath)) {
-            try {
-                $pdo = new PDO('sqlite:' . $dbPath);
-                $stmt = $pdo->prepare('SELECT status, expires_at FROM licenses WHERE license_key = ? LIMIT 1');
-                $stmt->execute([$key]);
-                $row = $stmt->fetch();
-                if ($row && $row['status'] === 'active' && $row['expires_at'] > gmdate('c')) $valid = true;
-            } catch (Exception $e) { unset($e); }
+        if (!$valid && $key) {
+            $pdo = $this->getLicenseDbPdo();
+            if ($pdo) {
+                try {
+                    $stmt = $pdo->prepare('SELECT status, expires_at FROM licenses WHERE license_key = ? LIMIT 1');
+                    $stmt->execute([$key]);
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($row && ($row['status'] ?? '') === 'active' && ($row['expires_at'] ?? '') > gmdate('c')) $valid = true;
+                } catch (Exception $e) { unset($e); }
+            }
         }
-        
+
         $this->currentLicense = $key;
         if ($valid) {
             if ($master && hash_equals($master, $key)) $this->isMaster = true;
             $_SESSION['license_key'] = $key; // Save to session
+            if ($this->currentLicense !== '') {
+                $this->loadServersFromLicenseDb($this->currentLicense);
+            }
             return true;
         }
 

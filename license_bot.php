@@ -60,8 +60,21 @@ class LicenseBot
             status TEXT,
             expires_at TEXT,
             payment_method TEXT,
-            created_at TEXT
+            created_at TEXT,
+            vps_json TEXT
         )");
+
+        $cols = $this->db->query("PRAGMA table_info(licenses)")->fetchAll(PDO::FETCH_ASSOC);
+        $hasVps = false;
+        foreach ($cols as $col) {
+            if (($col['name'] ?? '') === 'vps_json') {
+                $hasVps = true;
+                break;
+            }
+        }
+        if (!$hasVps) {
+            $this->db->exec("ALTER TABLE licenses ADD COLUMN vps_json TEXT");
+        }
 
         $this->db->exec("CREATE TABLE IF NOT EXISTS requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -366,7 +379,7 @@ class LicenseBot
             $licenseKey = $this->generateLicenseKey();
             $expiresAt = gmdate('c', time() + $duration * 86400);
 
-            $stmt = $this->db->prepare("INSERT OR REPLACE INTO licenses (license_key, user_id, username, duration_days, status, expires_at, payment_method, created_at) VALUES (:k, :u, :n, :d, 'active', :e, :m, :c)");
+            $stmt = $this->db->prepare("INSERT OR REPLACE INTO licenses (license_key, user_id, username, duration_days, status, expires_at, payment_method, created_at, vps_json) VALUES (:k, :u, :n, :d, 'active', :e, :m, :c, :v)");
             $stmt->execute([
                 ':k' => $licenseKey,
                 ':u' => $req['user_id'],
@@ -374,7 +387,8 @@ class LicenseBot
                 ':d' => $duration,
                 ':e' => $expiresAt,
                 ':m' => $req['payment_method'],
-                ':c' => gmdate('c')
+                ':c' => gmdate('c'),
+                ':v' => json_encode([])
             ]);
 
             $this->db->prepare("UPDATE requests SET status = 'approved' WHERE id = :id")->execute([':id' => $requestId]);
@@ -435,4 +449,3 @@ if (php_sapi_name() === 'cli' && isset($argv[0]) && basename($argv[0]) === basen
     $bot = new LicenseBot();
     $bot->run();
 }
-
