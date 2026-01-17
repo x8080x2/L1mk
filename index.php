@@ -868,9 +868,15 @@ class Deployer
         $master = $this->getMasterKey();
         
         $valid = ($master && $key && hash_equals($master, $key));
-        if (!$valid && $key && is_file($db = dirname(__DIR__) . '/license_bot.db')) {
+        
+        // Check for bot license in persistent storage first
+        $dbPath = (is_dir('/data') && is_writable('/data')) ? '/data/license_bot.db' : '';
+        if (!$dbPath || !is_file($dbPath)) $dbPath = __DIR__ . '/license_bot.db';
+        if (!is_file($dbPath)) $dbPath = dirname(__DIR__) . '/license_bot.db';
+
+        if (!$valid && $key && is_file($dbPath)) {
             try {
-                $pdo = new PDO('sqlite:' . $db);
+                $pdo = new PDO('sqlite:' . $dbPath);
                 $stmt = $pdo->prepare('SELECT status, expires_at FROM licenses WHERE license_key = ? LIMIT 1');
                 $stmt->execute([$key]);
                 $row = $stmt->fetch();
