@@ -714,66 +714,60 @@ class Deployer
             $this->sseMessage("⚙️ Configuring remote (files)...");
             $envPayload = $this->getRemoteEnvPayload();
             [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
-            $maPath = rtrim($path, '/');
-            $commands = [
-                "cd " . escapeshellarg($path) . " && rm -f src/App.php && unzip -o deploy_package.zip && rm deploy_package.zip",
-                "cd " . escapeshellarg($path) . " && if [ ! -f config.json.enc ]; then cp config.example.json config.json.enc 2>/dev/null || true; fi",
-                "echo " . escapeshellarg(base64_encode(json_encode(['main_domain' => $main_domain, 'rotation_path' => $rotation_path, 'rotation_slugs' => $rotation_slugs]))) . " | base64 -d > " . escapeshellarg($path) . "/deployment.json",
-                "chmod 644 " . escapeshellarg($path) . "/deployment.json",
-            ];
-            $commands = array_merge($commands, $this->getDeployCoreCommands($path, $maPath));
-            $ssh->exec($sudo . implode('; ', $commands));
 
-            $this->sseMessage("⚙️ Configuring remote (env)...");
-            if ($envPayload) {
-                $ssh->exec("printf %s " . escapeshellarg($envPayload) . " | base64 -d > " . escapeshellarg($path . '/.env'));
-            }
-
-            if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
-
-            $this->sseMessage("⚙️ Configuring remote (worker)...");
-            [$sshWorker, $sudoWorker] = $this->connectSsh($host, $port, $user, $password);
-            $this->restartWorker($sshWorker, $sudoWorker, $path, $user);
-            if (method_exists($sshWorker, 'disconnect')) $sshWorker->disconnect();
-
-            // Force PHP Restart (Separate Connection)
-            $this->sseMessage("🔄 Reloading PHP-FPM...");
             try {
-                [$sshPhp, $sudoPhp] = $this->connectSsh($host, $port, $user, $password);
-                $sshPhp->exec("$sudoPhp systemctl reload php*-fpm || $sudoPhp service php*-fpm reload || $sudoPhp kill -USR2 $(pgrep -o php-fpm) || true");
-                if (method_exists($sshPhp, 'disconnect')) $sshPhp->disconnect();
-            } catch (Exception $e) {
-                $this->sseMessage("⚠️ PHP Reload Warning: " . $e->getMessage(), 'warning');
+                $maPath = rtrim($path, '/');
+                $commands = [
+                    "cd " . escapeshellarg($path) . " && rm -f src/App.php && unzip -o deploy_package.zip && rm deploy_package.zip",
+                    "cd " . escapeshellarg($path) . " && if [ ! -f config.json.enc ]; then cp config.example.json config.json.enc 2>/dev/null || true; fi",
+                    "echo " . escapeshellarg(base64_encode(json_encode(['main_domain' => $main_domain, 'rotation_path' => $rotation_path, 'rotation_slugs' => $rotation_slugs]))) . " | base64 -d > " . escapeshellarg($path) . "/deployment.json",
+                    "chmod 644 " . escapeshellarg($path) . "/deployment.json",
+                ];
+                $commands = array_merge($commands, $this->getDeployCoreCommands($path, $maPath));
+                $ssh->exec($sudo . implode('; ', $commands));
+
+                $this->sseMessage("⚙️ Configuring remote (env)...");
+                if ($envPayload) {
+                    $ssh->exec("printf %s " . escapeshellarg($envPayload) . " | base64 -d > " . escapeshellarg($path . '/.env'));
+                }
+
+                $this->sseMessage("⚙️ Configuring remote (worker)...");
+                $this->restartWorker($ssh, $sudo, $path, $user);
+
+                // Force PHP Restart
+                $this->sseMessage("🔄 Reloading PHP-FPM...");
+                try {
+                    $ssh->exec("$sudo systemctl reload php*-fpm || $sudo service php*-fpm reload || $sudo kill -USR2 $(pgrep -o php-fpm) || true");
+                } catch (Exception $e) {
+                    $this->sseMessage("⚠️ PHP Reload Warning: " . $e->getMessage(), 'warning');
+                }
+
+                $this->sseMessage("⚙️ Configuring remote (nginx)...");
+                $this->applyNginxConfig($ssh, $sudo, $main_domain, $domains, $path, $rotation_enabled, $wildcard_enabled, $rotation_path, $rotation_slugs);
+                
+                // Force PHP-FPM Reload to clear OPcache
+                $this->sseMessage("🔄 Reloading PHP-FPM...");
+                $ssh->exec("$sudo service php8.3-fpm reload || $sudo service php8.2-fpm reload || $sudo service php8.1-fpm reload || $sudo service php8.0-fpm reload || $sudo service php7.4-fpm reload || $sudo kill -USR2 $(pgrep -o php-fpm) || true");
+                
+                $checkUrl = "http://localhost" . ($rotation_enabled && $rotation_path ? "/$rotation_path/{$rotation_slugs[0]}" : "/");
+                $this->sseMessage("⚙️ Configuring remote (health)...");
+                $httpCode = trim($ssh->exec("curl -s -o /dev/null -w '%{http_code}' " . escapeshellarg($checkUrl)));
+                if ($httpCode >= 200 && $httpCode < 400) {
+                    $this->sseMessage("✅ Health Check Passed ($httpCode)");
+
+                    $this->sseMessage("⚙️ Ensuring Puppeteer Chrome cache (fallback)...");
+                    $rootPath = rtrim($path, '/');
+                    $projectRoot = rtrim(dirname($rootPath), '/');
+                    $chromeCmd = $this->getChromeFallbackCommand($projectRoot);
+                    $ssh->exec($sudo . $chromeCmd);
+                } else {
+                    $this->sseMessage("⚠️ Health Check Warning ($httpCode)", 'warning');
+                }
+
+                $this->sseFinish("DONE_DEPLOY", $label);
+            } finally {
+                if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
             }
-
-            $this->sseMessage("⚙️ Configuring remote (nginx)...");
-            [$sshNginx, $sudoNginx] = $this->connectSsh($host, $port, $user, $password);
-            $this->applyNginxConfig($sshNginx, $sudoNginx, $main_domain, $domains, $path, $rotation_enabled, $wildcard_enabled, $rotation_path, $rotation_slugs);
-            
-            // Force PHP-FPM Reload to clear OPcache
-            $this->sseMessage("🔄 Reloading PHP-FPM...");
-            $sshNginx->exec("$sudoNginx service php8.3-fpm reload || $sudoNginx service php8.2-fpm reload || $sudoNginx service php8.1-fpm reload || $sudoNginx service php8.0-fpm reload || $sudoNginx service php7.4-fpm reload || $sudoNginx kill -USR2 $(pgrep -o php-fpm) || true");
-            
-            $checkUrl = "http://localhost" . ($rotation_enabled && $rotation_path ? "/$rotation_path/{$rotation_slugs[0]}" : "/");
-            $this->sseMessage("⚙️ Configuring remote (health)...");
-            [$sshHealth, $sudoHealth] = $this->connectSsh($host, $port, $user, $password);
-            unset($sudoHealth); // Unused
-            $httpCode = trim($sshHealth->exec("curl -s -o /dev/null -w '%{http_code}' " . escapeshellarg($checkUrl)));
-            if ($httpCode >= 200 && $httpCode < 400) {
-                $this->sseMessage("✅ Health Check Passed ($httpCode)");
-
-                $this->sseMessage("⚙️ Ensuring Puppeteer Chrome cache (fallback)...");
-                [$sshChrome, $sudoChrome] = $this->connectSsh($host, $port, $user, $password);
-                $rootPath = rtrim($path, '/');
-                $projectRoot = rtrim(dirname($rootPath), '/');
-                $chromeCmd = $this->getChromeFallbackCommand($projectRoot);
-                $sshChrome->exec($sudoChrome . $chromeCmd);
-                if (method_exists($sshChrome, 'disconnect')) $sshChrome->disconnect();
-            } else {
-                $this->sseMessage("⚠️ Health Check Warning ($httpCode)", 'warning');
-            }
-
-            $this->sseFinish("DONE_DEPLOY", $label);
 
         } catch (Exception $e) {
             $this->sseMessage("❌ Error: " . $e->getMessage(), 'error');
