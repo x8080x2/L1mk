@@ -558,7 +558,11 @@ class Deployer
             $commands = array_merge($commands, $this->getDeployCoreCommands($path, $maPath));
             $ssh->exec($sudo . implode('; ', $commands));
 
+            if (method_exists($ssh, 'disconnect')) $ssh->disconnect();
+            
             $this->sseMessage("⚙️ Configuring remote (env)...");
+            [$ssh, $sudo] = $this->connectSsh($host, $port, $user, $password);
+
             if ($envPayload) {
                 $ssh->exec("printf %s " . escapeshellarg($envPayload) . " | base64 -d > " . escapeshellarg($path . '/.env'));
             }

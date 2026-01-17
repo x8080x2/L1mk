@@ -1,0 +1,1007 @@
+[
+    {
+        "path": "database.sqlite",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "session_data",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "index.php",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "config.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "providers",
+        "type": "dir",
+        "perms": "0775"
+    },
+    {
+        "path": "providers\/microsoft.js",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "providers\/index.js",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "providers\/utils.js",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "providers\/godaddy.js",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "license_bot.db",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/composer.lock",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "php\/composer.phar",
+        "type": "file",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/router.php",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "php\/composer.json",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "php\/vendor",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/phpoption",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/LICENSE",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/composer.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/src",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/src\/PhpOption",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/src\/PhpOption\/LazyOption.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/src\/PhpOption\/Option.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/src\/PhpOption\/Some.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/phpoption\/phpoption\/src\/PhpOption\/None.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/autoload.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/composer\/autoload_namespaces.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/LICENSE",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/ClassLoader.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/autoload_psr4.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/autoload_classmap.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/platform_check.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/autoload_static.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/autoload_real.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/installed.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/autoload_files.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/InstalledVersions.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/composer\/installed.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/phpunit.xml",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/tests",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/tests\/IpToolsTest.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/tests\/RegionTest.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/tests\/bootstrap.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/tests\/DatabaseTest.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/tests\/CountryTest.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/tests\/WebServiceTest.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/requirements.txt",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/Makefile",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source\/images",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source\/images\/favicon.ico",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source\/images\/ipl-logo-square-1200.png",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source\/conf.py",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source\/quickstart.md",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source\/index.md",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/source\/code.md",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/docs\/make.bat",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/README.md",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/examples",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/examples\/example.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/.github",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/.github\/workflows",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/.github\/workflows\/test.yml",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/LICENSE.TXT",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/data",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/data\/IP2LOCATION-LITE-DB1.IPV6.BIN",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/data\/IP2LOCATION-ISO3166-2.CSV",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/data\/IP2LOCATION-COUNTRY-INFORMATION-BASIC.CSV",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/data\/IP2LOCATION-LITE-DB1.BIN",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/composer.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/.readthedocs.yaml",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/ip2location_bin_download.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/src",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/src\/IpTools.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/src\/Region.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/src\/Country.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/src\/Database.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/ip2location\/ip2location-php\/src\/WebService.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/PhpToken.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/LICENSE",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Resources",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Resources\/stubs",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Resources\/stubs\/PhpToken.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Resources\/stubs\/ValueError.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Resources\/stubs\/Attribute.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Resources\/stubs\/UnhandledMatchError.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Resources\/stubs\/Stringable.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/bootstrap.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/README.md",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/Php80.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-php80\/composer.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-ctype",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-ctype\/bootstrap80.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-ctype\/LICENSE",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-ctype\/bootstrap.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-ctype\/README.md",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-ctype\/Ctype.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-ctype\/composer.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/bootstrap80.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/LICENSE",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/Resources",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/Resources\/unidata",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/Resources\/unidata\/caseFolding.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/Resources\/unidata\/lowerCase.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/Resources\/unidata\/titleCaseRegexp.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/Resources\/unidata\/upperCase.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/Mbstring.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/bootstrap.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/README.md",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/symfony\/polyfill-mbstring\/composer.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/LICENSE",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/composer.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Validator.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/RepositoryInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/RepositoryBuilder.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/PutenvAdapter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/MultiWriter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/ArrayAdapter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/EnvConstAdapter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/ReaderInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/MultiReader.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/WriterInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/ReplacingWriter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/AdapterInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/ApacheAdapter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/ServerConstAdapter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/GuardedWriter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/Adapter\/ImmutableWriter.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Repository\/AdapterRepository.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Dotenv.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Util",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Util\/Regex.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Util\/Str.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser\/Lines.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser\/Parser.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser\/Value.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser\/Entry.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser\/EntryParser.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser\/ParserInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Parser\/Lexer.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Loader",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Loader\/Loader.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Loader\/Resolver.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Loader\/LoaderInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Exception",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Exception\/InvalidPathException.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Exception\/InvalidEncodingException.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Exception\/ExceptionInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Exception\/ValidationException.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Exception\/InvalidFileException.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store\/File",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store\/File\/Paths.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store\/File\/Reader.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store\/StoreBuilder.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store\/StringStore.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store\/FileStore.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/vlucas\/phpdotenv\/src\/Store\/StoreInterface.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell\/result-type",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell\/result-type\/LICENSE",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell\/result-type\/composer.json",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell\/result-type\/src",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell\/result-type\/src\/Result.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell\/result-type\/src\/Error.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "php\/vendor\/graham-campbell\/result-type\/src\/Success.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "package-lock.json",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "package.json",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": ".env",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "templates",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "templates\/challenge.html.enc",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "templates\/plain",
+        "type": "dir",
+        "perms": "0755"
+    },
+    {
+        "path": "templates\/plain\/admin.html",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "templates\/plain\/adobetemplate.html",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "templates\/plain\/template.html",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "templates\/plain\/upload.html",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "templates\/template.html.enc",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "templates\/ErrorMsPAGE.html.enc",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "templates\/template.html",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "templates\/upload.html.enc",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "templates\/admin.html.enc",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "api.php",
+        "type": "file",
+        "perms": "0644"
+    },
+    {
+        "path": "consolidated.js",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "IP2LOCATION-LITE-DB1.BIN",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": ".htaccess",
+        "type": "file",
+        "perms": "0664"
+    },
+    {
+        "path": "src",
+        "type": "dir",
+        "perms": "0775"
+    },
+    {
+        "path": "src\/App.php",
+        "type": "file",
+        "perms": "0664"
+    }
+]
