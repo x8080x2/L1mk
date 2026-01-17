@@ -1284,11 +1284,11 @@ NGINX;
     public function parseDeployRequest($post) {
         return [
             'action' => $_GET['action'] ?? '',
-            'host' => $post['host'] ?? '',
-            'user' => $post['user'] ?? 'root',
+            'host' => trim($post['host'] ?? ''),
+            'user' => trim($post['user'] ?? 'root'),
             'password' => $post['password'] ?? '',
             'port' => intval($post['port'] ?? 22),
-            'path' => $post['path'] ?? '/var/www/html',
+            'path' => trim($post['path'] ?? '/var/www/html'),
             'main_domain' => $this->normalizeDomain($post['main_domain'] ?? ''),
             'domains' => $this->normalizeDomainsList($post['domains'] ?? []),
             'rotation_enabled' => ($post['rotation_enabled'] ?? '0') === '1',
