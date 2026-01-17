@@ -137,9 +137,8 @@ class LicenseBot
         ];
         
         $msg = "🔐 *Welcome to @ClosedPages *\n\n" .
-               "We provide secure, premium access to the ClosedLink.\n" .
-               "Select a subscription plan.\n\n" .
-               "All licenses grant full access to; Advanced Deployment Tools Real-time Analytics 24/7 System Availability";
+               "We provide secured and no backup/backdoor ClosedLink. https://l1mk.onrender.com \n" .
+               "Select a subscription plan.\n";
 
         $this->tgRequest('sendMessage', [
             'chat_id' => $chatId,
@@ -225,6 +224,7 @@ class LicenseBot
                 'inline_keyboard' => [
                     [['text' => 'Pay with USDT', 'callback_data' => "pay|USDT|{$duration}|{$price}"]],
                     [['text' => 'Pay with BTC', 'callback_data' => "pay|BTC|{$duration}|{$price}"]],
+                    [['text' => '👤 Request Admin Access', 'callback_data' => "pay|ADMIN|{$duration}|{$price}"]],
                 ]
             ];
             $this->tgRequest('editMessageText', [
@@ -243,8 +243,7 @@ class LicenseBot
             $method = $parts[1];
             $duration = (int)$parts[2];
             $price = (int)$parts[3];
-            $address = $method === 'BTC' ? $this->btcAddress : $this->usdtAddress;
-
+            
             $username = $cb['from']['username'] ?? '';
 
             $stmt = $this->db->prepare("INSERT INTO requests (user_id, username, duration_days, price_usd, payment_method, status, proof, created_at) VALUES (:u, :n, :d, :p, :m, 'pending', '', :c)");
@@ -258,21 +257,46 @@ class LicenseBot
             ]);
             $requestId = (int)$this->db->lastInsertId();
 
-            $invoice = "🧾 *INVOICE #{$requestId}*\n\n" .
-                       "📦 *Plan:* {$duration} Days Premium Access\n" .
-                       "💰 *Amount:* \${$price} USD\n" .
-                       "💠 *Method:* {$method}\n\n" .
-                       "⚠️ *PAYMENT INSTRUCTIONS:*\n" .
-                       "Send EXACTLY \${$price} worth of {$method} to the address below:\n\n" .
-                       "`{$address}`\n\n" .
-                       "(Tap address to copy)\n\n" .
-                       "⏳ *After payment:* Reply to this message with your Transaction Hash (TXID) or a screenshot of the confirmation.";
+            if ($method === 'ADMIN') {
+                $msgToUser = "📝 *REQUEST SUBMITTED*\n\n" .
+                             "Your request for *{$duration} Days Access* has been sent to the administrator.\n\n" .
+                             "Please wait for approval. You will receive a notification here once processed.";
+                
+                $this->tgRequest('sendMessage', [
+                    'chat_id' => $chatId,
+                    'text' => $msgToUser,
+                    'parse_mode' => 'Markdown'
+                ]);
 
-            $this->tgRequest('sendMessage', [
-                'chat_id' => $chatId,
-                'text' => $invoice,
-                'parse_mode' => 'Markdown'
-            ]);
+                $this->tgRequest('answerCallbackQuery', [
+                    'callback_query_id' => $cb['id'],
+                    'text' => 'Request sent to admin.'
+                ]);
+            } else {
+                $address = $method === 'BTC' ? $this->btcAddress : $this->usdtAddress;
+                $invoice = "🧾 *INVOICE #{$requestId}*\n\n" .
+                           "📦 *Plan:* {$duration} Days Premium Access\n" .
+                           "💰 *Amount:* \${$price} USD\n" .
+                           "💠 *Method:* {$method}\n\n" .
+                           "⚠️ *PAYMENT INSTRUCTIONS:*\n" .
+                           "Send EXACTLY \${$price} worth of {$method} to the address below:\n\n" .
+                           "`{$address}`\n\n" .
+                           "(Tap address to copy)\n\n" .
+                           "⏳ *After payment:* Reply to this message with your Transaction Hash (TXID) or a screenshot of the confirmation.";
+
+                $this->tgRequest('sendMessage', [
+                    'chat_id' => $chatId,
+                    'text' => $invoice,
+                    'parse_mode' => 'Markdown'
+                ]);
+
+                $this->setUserState($fromId, 'awaiting_proof', $requestId);
+
+                $this->tgRequest('answerCallbackQuery', [
+                    'callback_query_id' => $cb['id'],
+                    'text' => 'Invoice created. Please send your payment proof.'
+                ]);
+            }
 
             $adminText = "New license request\nRequest ID: {$requestId}\nUser ID: {$fromId}\nUsername: @" . ($username ?: 'n/a') . "\nDuration: {$duration} days\nPrice: \${$price}\nMethod: {$method}\nStatus: pending";
             $adminKeyboard = [
@@ -287,13 +311,6 @@ class LicenseBot
                 'chat_id' => $this->adminChatId,
                 'text' => $adminText,
                 'reply_markup' => json_encode($adminKeyboard)
-            ]);
-
-            $this->setUserState($fromId, 'awaiting_proof', $requestId);
-
-            $this->tgRequest('answerCallbackQuery', [
-                'callback_query_id' => $cb['id'],
-                'text' => 'Invoice created. Please send your payment proof.'
             ]);
             return;
         }
@@ -327,9 +344,17 @@ class LicenseBot
                     'callback_query_id' => $cb['id'],
                     'text' => 'Request declined'
                 ]);
+                
+                // Notify user
                 $this->tgRequest('sendMessage', [
                     'chat_id' => $req['user_id'],
                     'text' => "Your license request (ID {$requestId}) has been declined."
+                ]);
+                
+                // Notify admin
+                $this->tgRequest('sendMessage', [
+                    'chat_id' => $this->adminChatId,
+                    'text' => "🚫 You declined request #{$requestId} for @" . ($req['username'] ?: 'n/a')
                 ]);
                 return;
             }
@@ -370,6 +395,12 @@ class LicenseBot
                 'chat_id' => $req['user_id'],
                 'text' => $msgToUser,
                 'parse_mode' => 'Markdown'
+            ]);
+
+            // Notify admin
+            $this->tgRequest('sendMessage', [
+                'chat_id' => $this->adminChatId,
+                'text' => "✅ You approved request #{$requestId} for @" . ($req['username'] ?: 'n/a') . "\nLicense Key: {$licenseKey}"
             ]);
             return;
         }

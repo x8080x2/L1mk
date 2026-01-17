@@ -19,8 +19,10 @@ RUN php -r "copy('https://getcomposer.org/installer','composer-setup.php');" \
 
 COPY . .
 
+RUN chmod +x start.sh
+
 WORKDIR /app
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-8080} index.php"]
+CMD ["./start.sh"]

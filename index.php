@@ -1365,7 +1365,6 @@ NGINX;
                                 Fetch Logs
                              </button>
                              <button type="button" id="verifyStructBtn" class="text-[10px] text-slate-400 hover:text-white">Verify Files</button>
-                             <button type="button" id="installChromeBtn" class="text-[10px] text-slate-400 hover:text-white">Install Chrome</button>
                              <button type="button" id="copyLogsBtn" class="text-[10px] text-slate-400 hover:text-white">Copy</button>
                         </div>
                     </div>

@@ -1,17 +1,29 @@
 #!/bin/bash
 
-# Kill existing PHP processes to avoid conflicts (optional, be careful if other php things are running)
-pkill -f "php -S 0.0.0.0:8000"
-pkill -f "php license_bot.php"
+# Use PORT environment variable if available (Render), otherwise default to 8000 (Local)
+PORT="${PORT:-8000}"
+
+# Kill existing PHP processes to avoid conflicts (suppress errors if none found)
+# Useful for local dev, usually harmless on Render
+pkill -f "php -S 0.0.0.0" > /dev/null 2>&1 || true
+pkill -f "php license_bot.php" > /dev/null 2>&1 || true
 
 echo "Starting License Bot..."
 php license_bot.php > bot.log 2>&1 &
 BOT_PID=$!
 echo "License Bot started with PID $BOT_PID"
 
-echo "Starting Web Server..."
-php -S 0.0.0.0:8000 index.php > server.log 2>&1 &
-SERVER_PID=$!
-echo "Web Server started with PID $SERVER_PID"
+echo "Starting Web Server on port $PORT..."
 
-echo "Services are running. Logs: bot.log, server.log"
+# Check if running on Render or in Docker (foreground mode required)
+if [ ! -z "$RENDER" ] || [ -f /.dockerenv ]; then
+    echo "Running in container mode (foreground)..."
+    # Execute the web server in the foreground replacing the shell process
+    exec php -S 0.0.0.0:$PORT index.php
+else
+    # Local mode (background)
+    php -S 0.0.0.0:$PORT index.php > server.log 2>&1 &
+    SERVER_PID=$!
+    echo "Web Server started with PID $SERVER_PID"
+    echo "Services are running. Logs: bot.log, server.log"
+fi
