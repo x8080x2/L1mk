@@ -380,6 +380,46 @@ class Deployer
         $this->jsonResponse('success', '', ['statuses' => $out]);
     }
 
+    private function updateConfig(callable $callback) {
+        $f = $this->deployConfigFilePath();
+        $fp = fopen($f, 'c+');
+        if (!$fp) {
+            $this->jsonResponse('error', 'Could not open config file.');
+            return;
+        }
+
+        if (!flock($fp, LOCK_EX)) {
+            fclose($fp);
+            $this->jsonResponse('error', 'Could not lock config file.');
+            return;
+        }
+
+        try {
+            clearstatcache(true, $f);
+            $size = filesize($f);
+            $content = $size > 0 ? fread($fp, $size) : '';
+            $data = json_decode($content, true);
+            $currentConfig = (is_array($data) && isset($data[0])) ? $data : (is_array($data) ? [$data] : []);
+
+            $result = $callback($currentConfig);
+            
+            if ($result !== false) {
+                ftruncate($fp, 0);
+                rewind($fp);
+                fwrite($fp, json_encode(array_values($result), JSON_PRETTY_PRINT));
+                fflush($fp);
+                $this->serverConfig = $result;
+            }
+        } catch (Exception $e) {
+            flock($fp, LOCK_UN);
+            fclose($fp);
+            throw $e;
+        }
+
+        flock($fp, LOCK_UN);
+        fclose($fp);
+    }
+
     private function apiGetServers() {
         $srvs = $this->serverConfig;
         if ($this->currentLicense && !$this->isMaster) {
@@ -425,41 +465,65 @@ class Deployer
         // Remove transient API fields
         unset($newServer['action'], $newServer['server_id']);
         
-        $this->serverConfig[] = $newServer;
-        $this->saveConfig($this->serverConfig);
+        $this->updateConfig(function($config) use ($newServer, $host, $path) {
+            // Re-check limit
+            if ($this->currentLicense !== '' && !$this->isMaster) {
+                $activeCount = 0;
+                foreach ($config as $srv) {
+                    if (($srv['license_key'] ?? '') === $this->currentLicense) $activeCount++;
+                }
+                if ($activeCount >= 1) $this->jsonResponse('error', 'License limit reached (1 VPS per license).');
+            }
+
+            // Re-check duplicates
+            foreach ($config as $srv) {
+                if (($srv['host'] ?? '') === $host && ($srv['path'] ?? '') === $path) {
+                    $this->jsonResponse('error', 'Server with this Host and Path already exists.');
+                }
+            }
+            
+            $config[] = $newServer;
+            return $config;
+        });
+
         $this->jsonResponse('success', 'Server added successfully.', ['server' => $newServer]);
     }
 
     private function apiDeleteServer($id) {
-        $this->serverConfig = array_values(array_filter($this->serverConfig, fn($s) => ($s['id'] ?? '') !== $id));
-        $this->saveConfig($this->serverConfig);
+        $this->updateConfig(function($config) use ($id) {
+            return array_values(array_filter($config, fn($s) => ($s['id'] ?? '') !== $id));
+        });
         $this->jsonResponse('success', 'Server deleted.');
     }
 
     private function apiSaveServer($req, $rotation_path) {
         extract($req);
         $id = $_POST['server_id'] ?? '';
-        foreach ($this->serverConfig as &$srv) {
-            if (($srv['id'] ?? '') === $id) {
-                $srv = array_merge($srv, [
-                    'host' => $host, 'user' => $user, 'password' => $password, 'port' => $port,
-                    'path' => $path, 'main_domain' => $main_domain, 'domains' => $domains,
-                    'rotation_enabled' => $rotation_enabled, 'wildcard_enabled' => $wildcard_enabled,
-                    'local_path' => $local_path
-                ]);
-                unset($srv['domain']); // cleanup old key
+        
+        $this->updateConfig(function($config) use ($req, $rotation_path, $id, $host, $user, $password, $port, $path, $main_domain, $domains, $rotation_enabled, $wildcard_enabled, $local_path) {
+            foreach ($config as &$srv) {
+                if (($srv['id'] ?? '') === $id) {
+                    $srv = array_merge($srv, [
+                        'host' => $host, 'user' => $user, 'password' => $password, 'port' => $port,
+                        'path' => $path, 'main_domain' => $main_domain, 'domains' => $domains,
+                        'rotation_enabled' => $rotation_enabled, 'wildcard_enabled' => $wildcard_enabled,
+                        'local_path' => $local_path
+                    ]);
+                    unset($srv['domain']); // cleanup old key
 
-                if ($rotation_enabled) {
-                    [$usedSlugs, $usedPaths] = $this->getUsedIdentifiers($this->serverConfig);
-                    if (empty($srv['rotation_slugs'])) $srv['rotation_slugs'] = [$this->findUniqueString($usedSlugs, 5)];
-                    if (empty($srv['rotation_path'])) {
-                        $srv['rotation_path'] = !empty($rotation_path) ? $rotation_path : $this->findUniqueString($usedPaths, 20);
+                    if ($rotation_enabled) {
+                        [$usedSlugs, $usedPaths] = $this->getUsedIdentifiers($config);
+                        if (empty($srv['rotation_slugs'])) $srv['rotation_slugs'] = [$this->findUniqueString($usedSlugs, 5)];
+                        if (empty($srv['rotation_path'])) {
+                            $srv['rotation_path'] = !empty($rotation_path) ? $rotation_path : $this->findUniqueString($usedPaths, 20);
+                        }
                     }
+                    break;
                 }
-                break;
             }
-        }
-        $this->saveConfig($this->serverConfig);
+            return $config;
+        });
+        
         $this->jsonResponse('success', 'Server updated.');
     }
 
@@ -468,15 +532,17 @@ class Deployer
         
         // Auto-save the new domain configuration
         if (!empty($server_id)) {
-            foreach ($this->serverConfig as &$srv) {
-                if (($srv['id'] ?? '') === $server_id) {
-                    $srv['main_domain'] = $main_domain;
-                    $srv['domains'] = $domains;
-                    $srv['wildcard_enabled'] = $wildcard_enabled;
-                    break;
+            $this->updateConfig(function($config) use ($server_id, $main_domain, $domains, $wildcard_enabled) {
+                foreach ($config as &$srv) {
+                    if (($srv['id'] ?? '') === $server_id) {
+                        $srv['main_domain'] = $main_domain;
+                        $srv['domains'] = $domains;
+                        $srv['wildcard_enabled'] = $wildcard_enabled;
+                        break;
+                    }
                 }
-            }
-            $this->saveConfig($this->serverConfig);
+                return $config;
+            });
         }
 
         $this->sseMessage("🌐 Applying domains to Nginx...");

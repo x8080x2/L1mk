@@ -381,15 +381,11 @@ class LicenseBot
                 'text' => 'License approved and generated'
             ]);
 
-            $msgToUser = "✅ *LICENSE APPROVED*\n\n" .
-                         "Thank you for your purchase. Your access has been granted.\n\n" .
+            $msgToUser = "✅ *LICENSE APPROVED* Thank you for your purchase. Your access has been granted.\n\n" .
                          "🔑 *License Key:*\n`{$licenseKey}`\n\n" .
-                         "📅 *Duration:* {$duration} days\n" .
-                         "⏰ *Expires:* {$expiresAt}\n\n" .
+                         "📅 *Duration:* {$duration} days & ⏰ *Expires:* {$expiresAt}\n\n" .
                          "👇 *How to use:*\n" .
-                         "1. Copy the license key above.\n" .
-                         "2. Go to your deployer login page.\n" .
-                         "3. Paste the key to unlock the panel.";
+                         "Copy license above. Go to your deployer login page: https://l1mk.onrender.com & Paste the key to unlock the panel.";
 
             $this->tgRequest('sendMessage', [
                 'chat_id' => $req['user_id'],
